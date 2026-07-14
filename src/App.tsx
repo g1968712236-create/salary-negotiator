@@ -25,6 +25,7 @@ interface SalaryData {
   providentBase: number
   personalRate: number
   companyRate: number
+  deduction: number
   equity: string
   signingBonus: string
 }
@@ -37,6 +38,40 @@ type BgColor = "#050510" | "#0a0a1a" | "#111122" | "#1a0a14"
 const formatMoney = (n: number) => `¥${n.toLocaleString()}`
 const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v))
 
+/* 个人所得税计算（工资薪金综合所得 + 年终奖单独计税） */
+const ANNUAL_TAX_BRACKETS = [
+  { limit: 36000, rate: 0.03, deduction: 0 },
+  { limit: 144000, rate: 0.1, deduction: 2520 },
+  { limit: 300000, rate: 0.2, deduction: 16920 },
+  { limit: 420000, rate: 0.25, deduction: 31920 },
+  { limit: 660000, rate: 0.3, deduction: 52920 },
+  { limit: 960000, rate: 0.35, deduction: 85920 },
+  { limit: Infinity, rate: 0.45, deduction: 181920 },
+]
+
+const BONUS_TAX_BRACKETS = [
+  { limit: 3000, rate: 0.03, deduction: 0 },
+  { limit: 12000, rate: 0.1, deduction: 210 },
+  { limit: 25000, rate: 0.2, deduction: 1410 },
+  { limit: 35000, rate: 0.25, deduction: 2660 },
+  { limit: 55000, rate: 0.3, deduction: 4410 },
+  { limit: 80000, rate: 0.35, deduction: 7160 },
+  { limit: Infinity, rate: 0.45, deduction: 15160 },
+]
+
+function calcAnnualTax(taxableIncome: number): number {
+  if (taxableIncome <= 0) return 0
+  const bracket = ANNUAL_TAX_BRACKETS.find((b) => taxableIncome <= b.limit) || ANNUAL_TAX_BRACKETS[ANNUAL_TAX_BRACKETS.length - 1]
+  return Math.max(0, taxableIncome * bracket.rate - bracket.deduction)
+}
+
+function calcBonusTax(bonus: number): number {
+  if (bonus <= 0) return 0
+  const monthlyAvg = bonus / 12
+  const bracket = BONUS_TAX_BRACKETS.find((b) => monthlyAvg <= b.limit) || BONUS_TAX_BRACKETS[BONUS_TAX_BRACKETS.length - 1]
+  return Math.max(0, bonus * bracket.rate - bracket.deduction)
+}
+
 interface Summary {
   annualCash: number
   monthlyPersonal: number
@@ -46,6 +81,9 @@ interface Summary {
   signingNum: number
   annualTotalPackage: number
   monthlyAvg: number
+  annualSalaryAfterTax: number
+  annualBonusAfterTax: number
+  annualTotalAfterTax: number
 }
 
 function calcSummary(data: SalaryData): Summary {
@@ -57,6 +95,18 @@ function calcSummary(data: SalaryData): Summary {
   const signingNum = data.signingBonus === "" ? 0 : Number(data.signingBonus)
   const annualTotalPackage = annualCash + equityNum + signingNum
   const monthlyAvg = Math.round(annualTotalPackage / 12)
+
+  const annualSalary = data.monthlyBase * 12
+  const annualBonus = Math.max(0, annualCash - annualSalary)
+  const annualDeduction = data.deduction * 12
+  const annualPersonalProvident = monthlyPersonal * 12
+  const taxableIncome = Math.max(0, annualSalary - 60000 - annualPersonalProvident - annualDeduction)
+  const annualSalaryTax = calcAnnualTax(taxableIncome)
+  const annualSalaryAfterTax = annualSalary - annualSalaryTax
+  const annualBonusTax = calcBonusTax(annualBonus)
+  const annualBonusAfterTax = annualBonus - annualBonusTax
+  const annualTotalAfterTax = annualSalaryAfterTax + annualBonusAfterTax + equityNum + signingNum
+
   return {
     annualCash,
     monthlyPersonal,
@@ -66,6 +116,9 @@ function calcSummary(data: SalaryData): Summary {
     signingNum,
     annualTotalPackage,
     monthlyAvg,
+    annualSalaryAfterTax,
+    annualBonusAfterTax,
+    annualTotalAfterTax,
   }
 }
 
@@ -276,6 +329,29 @@ function ProvidentBaseInput({ value, onChange, placeholder, label }: ProvidentBa
   )
 }
 
+/* ===================== DeductionInput ===================== */
+interface DeductionInputProps {
+  value: number
+  onChange: (value: number) => void
+}
+
+function DeductionInput({ value, onChange }: DeductionInputProps) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-dim">专项附加扣除（元/月）</span>
+        <span className="text-[10px] text-subtle">起征点 5000/月已内置</span>
+      </div>
+      <NumericInput
+        value={value === 0 ? "" : String(value)}
+        onChange={(v) => onChange(Number(v))}
+        className="text-accent"
+        placeholder="0"
+      />
+    </div>
+  )
+}
+
 /* ===================== ExtraModules ===================== */
 interface ExtraModulesProps {
   equity: string
@@ -388,6 +464,17 @@ function SalarySummary({ data, label }: SalarySummaryProps) {
             {s.equityNum > 0 ? ` + 股权${formatMoney(s.equityNum)}` : ""}
             {s.signingNum > 0 ? ` + 签字费${formatMoney(s.signingNum)}` : ""}
             {" "}= 月均 {formatMoney(s.monthlyAvg)}
+          </div>
+        </div>
+        <div className="cyber-panel col-span-2 p-3 sm:col-span-3">
+          <div className="text-[9px] uppercase tracking-wider text-success">税后收入合计（工资+年终单独计税）</div>
+          <div className="mt-1 text-lg font-bold text-success neon-green">
+            {formatMoney(s.annualTotalAfterTax)}
+          </div>
+          <div className="mt-0.5 text-[10px] text-dim">
+            税后工资{formatMoney(s.annualSalaryAfterTax)} + 税后年终{formatMoney(s.annualBonusAfterTax)}
+            {s.equityNum > 0 ? ` + 股权${formatMoney(s.equityNum)}` : ""}
+            {s.signingNum > 0 ? ` + 签字费${formatMoney(s.signingNum)}` : ""}
           </div>
         </div>
       </div>
@@ -948,6 +1035,7 @@ function createSalaryData(
   providentBase: number,
   personalRate: number,
   companyRate: number,
+  deduction: number,
   equity = "",
   signingBonus = ""
 ): SalaryData {
@@ -957,6 +1045,7 @@ function createSalaryData(
     providentBase: providentBase <= 0 ? monthlyBase : providentBase,
     personalRate,
     companyRate,
+    deduction,
     equity,
     signingBonus,
   }
@@ -973,6 +1062,7 @@ export default function App() {
   const [currentProvidentBase, setCurrentProvidentBase] = useState(25000)
   const [currentPersonalRate, setCurrentPersonalRate] = useState(12)
   const [currentCompanyRate, setCurrentCompanyRate] = useState(12)
+  const [currentDeduction, setCurrentDeduction] = useState(0)
   const [currentEquity, setCurrentEquity] = useState("")
   const [currentSigning, setCurrentSigning] = useState("")
 
@@ -985,6 +1075,7 @@ export default function App() {
   const [expectedProvidentBase, setExpectedProvidentBase] = useState(0)
   const [expectedPersonalRate, setExpectedPersonalRate] = useState(12)
   const [expectedCompanyRate, setExpectedCompanyRate] = useState(12)
+  const [expectedDeduction, setExpectedDeduction] = useState(0)
   const [expectedEquity, setExpectedEquity] = useState("")
   const [expectedSigning, setExpectedSigning] = useState("")
 
@@ -994,6 +1085,7 @@ export default function App() {
   const [offerProvidentBase, setOfferProvidentBase] = useState(0)
   const [offerPersonalRate, setOfferPersonalRate] = useState(12)
   const [offerCompanyRate, setOfferCompanyRate] = useState(12)
+  const [offerDeduction, setOfferDeduction] = useState(0)
   const [offerEquity, setOfferEquity] = useState("")
   const [offerSigning, setOfferSigning] = useState("")
 
@@ -1024,10 +1116,11 @@ export default function App() {
         currentProvidentBase,
         currentPersonalRate,
         currentCompanyRate,
+        currentDeduction,
         currentEquity,
         currentSigning
       ),
-    [currentBase, currentMonths, currentProvidentBase, currentPersonalRate, currentCompanyRate, currentEquity, currentSigning]
+    [currentBase, currentMonths, currentProvidentBase, currentPersonalRate, currentCompanyRate, currentDeduction, currentEquity, currentSigning]
   )
   const currentSummary = useMemo(() => calcSummary(currentData), [currentData])
 
@@ -1043,6 +1136,7 @@ export default function App() {
         expectedProvidentBase,
         expectedPersonalRate,
         expectedCompanyRate,
+        expectedDeduction,
         expectedEquity,
         expectedSigning
       ),
@@ -1052,6 +1146,7 @@ export default function App() {
       expectedProvidentBase,
       expectedPersonalRate,
       expectedCompanyRate,
+      expectedDeduction,
       expectedEquity,
       expectedSigning,
     ]
@@ -1065,10 +1160,11 @@ export default function App() {
         offerProvidentBase,
         offerPersonalRate,
         offerCompanyRate,
+        offerDeduction,
         offerEquity,
         offerSigning
       ),
-    [offerBase, offerMonths, offerProvidentBase, offerPersonalRate, offerCompanyRate, offerEquity, offerSigning]
+    [offerBase, offerMonths, offerProvidentBase, offerPersonalRate, offerCompanyRate, offerDeduction, offerEquity, offerSigning]
   )
 
   /* 当在职待遇或涨幅变化时，反推期望月Base */
@@ -1165,6 +1261,7 @@ export default function App() {
                   onChange={setCurrentCompanyRate}
                   label="公司缴纳比例"
                 />
+                <DeductionInput value={currentDeduction} onChange={setCurrentDeduction} />
                 <ExtraModules
                   equity={currentEquity}
                   onEquityChange={setCurrentEquity}
@@ -1204,6 +1301,7 @@ export default function App() {
                   onChange={setExpectedCompanyRate}
                   label="公司缴纳比例"
                 />
+                <DeductionInput value={expectedDeduction} onChange={setExpectedDeduction} />
                 <ExtraModules
                   equity={expectedEquity}
                   onEquityChange={setExpectedEquity}
@@ -1229,6 +1327,7 @@ export default function App() {
               />
               <RateSlider value={offerPersonalRate} onChange={setOfferPersonalRate} label="个人缴纳比例" />
               <RateSlider value={offerCompanyRate} onChange={setOfferCompanyRate} label="公司缴纳比例" />
+              <DeductionInput value={offerDeduction} onChange={setOfferDeduction} />
               <ExtraModules
                 equity={offerEquity}
                 onEquityChange={setOfferEquity}
