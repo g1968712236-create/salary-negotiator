@@ -967,8 +967,9 @@ export default function App() {
   const [currentSigning, setCurrentSigning] = useState("")
 
   /* 期望 */
-  const [increasePercent, setIncreasePercent] = useState("20")
-  const increasePercentNum = Number(increasePercent)
+  const [increaseInput, setIncreaseInput] = useState("20.00")
+  const [increaseCommitted, setIncreaseCommitted] = useState(20)
+  const increaseDisplay = increaseCommitted.toFixed(2)
   const [expectedBase, setExpectedBase] = useState(30000)
   const [expectedMonths, setExpectedMonths] = useState(14)
   const [expectedProvidentBase, setExpectedProvidentBase] = useState(0)
@@ -1021,8 +1022,8 @@ export default function App() {
   const currentSummary = useMemo(() => calcSummary(currentData), [currentData])
 
   const expectedAnnualPackage = useMemo(() => {
-    return Math.round(currentSummary.annualTotalPackage * (1 + increasePercentNum / 100))
-  }, [currentSummary.annualTotalPackage, increasePercentNum])
+    return Math.round(currentSummary.annualTotalPackage * (1 + increaseCommitted / 100))
+  }, [currentSummary.annualTotalPackage, increaseCommitted])
 
   const expectedData = useMemo(
     () =>
@@ -1090,17 +1091,22 @@ export default function App() {
                   <span className="text-accent">{formatMoney(expectedAnnualPackage)}</span>
                 </span>
                 <NumericInput
-                  value={increasePercent}
+                  value={increaseInput}
                   onChange={(v) => {
                     const num = Number(v)
                     if (v === "" || (num >= 0 && num <= 100)) {
-                      setIncreasePercent(v)
+                      setIncreaseInput(v)
+                      if (v !== "") {
+                        setIncreaseCommitted(num)
+                      }
                     }
                   }}
                   onBlur={() => {
-                    const num = Number(increasePercent)
+                    const num = Number(increaseInput)
                     if (Number.isFinite(num)) {
-                      setIncreasePercent(num.toFixed(2))
+                      const committed = Math.max(0, Math.min(100, num))
+                      setIncreaseCommitted(committed)
+                      setIncreaseInput(committed.toFixed(2))
                     }
                   }}
                   allowDecimal
@@ -1108,15 +1114,19 @@ export default function App() {
                 />
               </div>
               <Slider
-                value={[increasePercentNum]}
-                onValueChange={(v) => setIncreasePercent(v[0].toFixed(2))}
+                value={[increaseCommitted]}
+                onValueChange={(v) => {
+                  const num = v[0]
+                  setIncreaseCommitted(num)
+                  setIncreaseInput(num.toFixed(2))
+                }}
                 min={0}
                 max={100}
                 step={1}
               />
               <div className="mt-1 flex justify-between text-[10px] text-subtle">
                 <span>0%</span>
-                <span>{increasePercent}%</span>
+                <span>{increaseDisplay}%</span>
                 <span>100%</span>
               </div>
             </div>
@@ -1161,9 +1171,9 @@ export default function App() {
                   onChange={(v) => {
                     if (currentSummary.annualTotalPackage > 0) {
                       const newAnnual = v * expectedMonths + Number(expectedEquity || 0) + Number(expectedSigning || 0)
-                      setIncreasePercent(
-                        (((newAnnual / currentSummary.annualTotalPackage) - 1) * 100).toFixed(2)
-                      )
+                      const pct = ((newAnnual / currentSummary.annualTotalPackage) - 1) * 100
+                      setIncreaseCommitted(pct)
+                      setIncreaseInput(pct.toFixed(2))
                     }
                   }}
                   label="期望月Base（元/月）"
