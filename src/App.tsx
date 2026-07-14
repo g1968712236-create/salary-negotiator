@@ -1295,8 +1295,8 @@ export default function App() {
 
   const tabs: { key: TabKey; label: string }[] = [
     { key: "expected", label: "期望方案" },
-    { key: "offer", label: "新Offer" },
-    { key: "diff", label: "对比分析" },
+    { key: "offer", label: "新offer待遇" },
+    { key: "diff", label: "待遇综合对比" },
     { key: "lookup", label: "年包速查" },
     { key: "tax", label: "税率表" },
   ]
