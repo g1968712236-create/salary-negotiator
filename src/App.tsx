@@ -155,7 +155,7 @@ function BaseInputSlider({ value, onChange, label }: BaseInputSliderProps) {
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1">
       <div className="flex items-center justify-between">
         <span className="text-xs text-dim">{label}</span>
         <NumericInput
@@ -167,23 +167,12 @@ function BaseInputSlider({ value, onChange, label }: BaseInputSliderProps) {
             }
           }}
           onBlur={() => commit(inputValue)}
-          className="w-24 text-accent"
+          className="w-28 text-accent"
           placeholder="25000"
         />
       </div>
-      <Slider
-        value={[value]}
-        onValueChange={(v) => {
-          onChange(v[0])
-          setInputValue(String(v[0]))
-        }}
-        min={MIN_BASE}
-        max={MAX_BASE}
-        step={1000}
-      />
-      <div className="flex justify-between text-[10px] text-subtle">
-        <span>¥{MIN_BASE.toLocaleString()}</span>
-        <span>¥{MAX_BASE.toLocaleString()}</span>
+      <div className="text-right text-[10px] text-subtle">
+        范围 ¥{MIN_BASE.toLocaleString()} ~ ¥{MAX_BASE.toLocaleString()}
       </div>
     </div>
   )
