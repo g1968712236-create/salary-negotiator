@@ -12,8 +12,8 @@ import {
 import { cn } from "@/lib/utils"
 
 /* ===================== 常量 ===================== */
-const MIN_BASE = 25000
-const MAX_BASE = 40000
+const MIN_BASE = 100
+const MAX_BASE = 1000000
 const MIN_RATE = 5
 const MAX_RATE = 12
 const MONTHS_RANGE = [12, 13, 14, 15, 16, 17, 18]
@@ -168,11 +168,11 @@ function BaseInputSlider({ value, onChange, label }: BaseInputSliderProps) {
           }}
           onBlur={() => commit(inputValue)}
           className="w-28 text-accent"
-          placeholder="25000"
+          placeholder="100"
         />
       </div>
       <div className="text-right text-[10px] text-subtle">
-        范围 ¥{MIN_BASE.toLocaleString()} ~ ¥{MAX_BASE.toLocaleString()}
+        最小 ¥{MIN_BASE.toLocaleString()}
       </div>
     </div>
   )
