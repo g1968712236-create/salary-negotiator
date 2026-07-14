@@ -162,8 +162,9 @@ function BaseInputSlider({ value, onChange, label }: BaseInputSliderProps) {
           value={inputValue}
           onChange={(v) => {
             setInputValue(v)
-            if (v !== "") {
-              onChange(clamp(Number(v), MIN_BASE, MAX_BASE))
+            const num = Number(v)
+            if (v !== "" && num >= MIN_BASE && num <= MAX_BASE) {
+              onChange(num)
             }
           }}
           onBlur={() => commit(inputValue)}
