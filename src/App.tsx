@@ -406,8 +406,18 @@ interface DiffItem {
   highlight?: boolean
 }
 
-function DiffView({ expected, offer }: { expected: SalaryData; offer: SalaryData }) {
-  const e = useMemo(() => calcSummary(expected), [expected])
+function DiffView({
+  baseline,
+  offer,
+  title,
+  baselineLabel,
+}: {
+  baseline: SalaryData
+  offer: SalaryData
+  title: string
+  baselineLabel: string
+}) {
+  const e = useMemo(() => calcSummary(baseline), [baseline])
   const o = useMemo(() => calcSummary(offer), [offer])
 
   const diff = (a: number, b: number): DiffItem["state"] => {
@@ -426,19 +436,19 @@ function DiffView({ expected, offer }: { expected: SalaryData; offer: SalaryData
   const items: DiffItem[] = [
     {
       label: "月Base",
-      expected: formatMoney(expected.monthlyBase),
+      expected: formatMoney(baseline.monthlyBase),
       offer: formatMoney(offer.monthlyBase),
-      abs: `${offer.monthlyBase >= expected.monthlyBase ? "+" : ""}${formatMoney(offer.monthlyBase - expected.monthlyBase).replace("¥", "")}`,
-      rel: relPct(expected.monthlyBase, offer.monthlyBase),
-      state: diff(expected.monthlyBase, offer.monthlyBase),
+      abs: `${offer.monthlyBase >= baseline.monthlyBase ? "+" : ""}${formatMoney(offer.monthlyBase - baseline.monthlyBase).replace("¥", "")}`,
+      rel: relPct(baseline.monthlyBase, offer.monthlyBase),
+      state: diff(baseline.monthlyBase, offer.monthlyBase),
     },
     {
       label: "薪数",
-      expected: `${expected.months}薪`,
+      expected: `${baseline.months}薪`,
       offer: `${offer.months}薪`,
-      abs: `${offer.months >= expected.months ? "+" : ""}${offer.months - expected.months}薪`,
-      rel: relPct(expected.months, offer.months),
-      state: diff(expected.months, offer.months),
+      abs: `${offer.months >= baseline.months ? "+" : ""}${offer.months - baseline.months}薪`,
+      rel: relPct(baseline.months, offer.months),
+      state: diff(baseline.months, offer.months),
     },
     {
       label: "现金年总收入",
@@ -507,11 +517,11 @@ function DiffView({ expected, offer }: { expected: SalaryData; offer: SalaryData
 
   return (
     <div className="cyber-panel p-4">
-      <div className="mb-3 text-xs text-dim">期望 vs Offer 逐项对比</div>
+      <div className="mb-3 text-xs text-dim">{title}</div>
       <div className="min-w-[560px]">
         <div className="grid grid-cols-[2fr_1.5fr_1.5fr_1fr_1fr] gap-2 border-b border-accent/10 pb-2 text-[10px] text-subtle">
           <span>项目</span>
-          <span className="text-center">期望</span>
+          <span className="text-center">{baselineLabel}</span>
           <span className="text-center">Offer</span>
           <span className="text-center">绝对差</span>
           <span className="text-center">相对差</span>
@@ -1232,7 +1242,18 @@ export default function App() {
       case "diff":
         return (
           <div className="animate-in space-y-4">
-            <DiffView expected={expectedData} offer={offerData} />
+            <DiffView
+              title="当前岗位 vs Offer 逐项对比"
+              baselineLabel="当前"
+              baseline={currentData}
+              offer={offerData}
+            />
+            <DiffView
+              title="期望 vs Offer 逐项对比"
+              baselineLabel="期望"
+              baseline={expectedData}
+              offer={offerData}
+            />
           </div>
         )
       case "lookup":
