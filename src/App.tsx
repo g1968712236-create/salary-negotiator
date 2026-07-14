@@ -26,6 +26,7 @@ interface SalaryData {
   personalRate: number
   companyRate: number
   deduction: number
+  monthlyExpense: number
   equity: string
   signingBonus: string
 }
@@ -89,6 +90,8 @@ interface Summary {
   annualSalaryAfterTax: number
   annualBonusAfterTax: number
   annualTotalAfterTax: number
+  annualExpense: number
+  netIncome: number
 }
 
 function calcSummary(
@@ -115,6 +118,8 @@ function calcSummary(
   const annualBonusTax = calcBonusTax(annualBonus, bonusBrackets)
   const annualBonusAfterTax = annualBonus - annualBonusTax
   const annualTotalAfterTax = annualSalaryAfterTax + annualBonusAfterTax + equityNum + signingNum
+  const annualExpense = data.monthlyExpense * 12
+  const netIncome = annualTotalAfterTax - annualExpense
 
   return {
     annualCash,
@@ -128,6 +133,8 @@ function calcSummary(
     annualSalaryAfterTax,
     annualBonusAfterTax,
     annualTotalAfterTax,
+    annualExpense,
+    netIncome,
   }
 }
 
@@ -361,6 +368,29 @@ function DeductionInput({ value, onChange }: DeductionInputProps) {
   )
 }
 
+/* ===================== ExpenseInput ===================== */
+interface ExpenseInputProps {
+  value: number
+  onChange: (value: number) => void
+}
+
+function ExpenseInput({ value, onChange }: ExpenseInputProps) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-dim">固定支出合计（元/月）</span>
+        <span className="text-[10px] text-subtle">房租/通勤/餐饮等</span>
+      </div>
+      <NumericInput
+        value={value === 0 ? "" : String(value)}
+        onChange={(v) => onChange(Number(v))}
+        className="text-accent"
+        placeholder="0"
+      />
+    </div>
+  )
+}
+
 /* ===================== ExtraModules ===================== */
 interface ExtraModulesProps {
   equity: string
@@ -488,6 +518,16 @@ function SalarySummary({ data, label, annualBrackets, bonusBrackets }: SalarySum
             {s.signingNum > 0 ? ` + 签字费${formatMoney(s.signingNum)}` : ""}
           </div>
         </div>
+        <div className="cyber-panel p-2.5">
+          <div className="text-[9px] uppercase tracking-wider text-subtle">固定支出（年）</div>
+          <div className="mt-1 text-sm text-dim">{formatMoney(s.annualExpense)}</div>
+          <div className="mt-0.5 text-[9px] text-subtle">{data.monthlyExpense ? `${data.monthlyExpense.toLocaleString()}/月 x 12` : "未填写"}</div>
+        </div>
+        <div className="cyber-panel col-span-2 border-glow bg-black/60 p-3 sm:col-span-2">
+          <div className="text-[9px] uppercase tracking-wider text-accent">净收入</div>
+          <div className="mt-1 text-lg font-bold text-accent neon-cyan">{formatMoney(s.netIncome)}</div>
+          <div className="mt-0.5 text-[10px] text-dim">税后收入 - 固定支出</div>
+        </div>
       </div>
     </div>
   )
@@ -607,6 +647,31 @@ function DiffView({
       abs: `${o.annualTotalPackage >= e.annualTotalPackage ? "+" : ""}${formatMoney(o.annualTotalPackage - e.annualTotalPackage).replace("¥", "")}`,
       rel: relPct(e.annualTotalPackage, o.annualTotalPackage),
       state: diff(e.annualTotalPackage, o.annualTotalPackage),
+      highlight: true,
+    },
+    {
+      label: "固定支出（月）",
+      expected: `${baseline.monthlyExpense.toLocaleString()}`,
+      offer: `${offer.monthlyExpense.toLocaleString()}`,
+      abs: `${offer.monthlyExpense >= baseline.monthlyExpense ? "+" : ""}${(offer.monthlyExpense - baseline.monthlyExpense).toLocaleString()}`,
+      rel: relPct(baseline.monthlyExpense, offer.monthlyExpense),
+      state: diff(baseline.monthlyExpense, offer.monthlyExpense),
+    },
+    {
+      label: "税后收入",
+      expected: formatMoney(e.annualTotalAfterTax),
+      offer: formatMoney(o.annualTotalAfterTax),
+      abs: `${o.annualTotalAfterTax >= e.annualTotalAfterTax ? "+" : ""}${formatMoney(o.annualTotalAfterTax - e.annualTotalAfterTax).replace("¥", "")}`,
+      rel: relPct(e.annualTotalAfterTax, o.annualTotalAfterTax),
+      state: diff(e.annualTotalAfterTax, o.annualTotalAfterTax),
+    },
+    {
+      label: "净收入",
+      expected: formatMoney(e.netIncome),
+      offer: formatMoney(o.netIncome),
+      abs: `${o.netIncome >= e.netIncome ? "+" : ""}${formatMoney(o.netIncome - e.netIncome).replace("¥", "")}`,
+      rel: relPct(e.netIncome, o.netIncome),
+      state: diff(e.netIncome, o.netIncome),
       highlight: true,
     },
   ]
@@ -1148,6 +1213,7 @@ function createSalaryData(
   personalRate: number,
   companyRate: number,
   deduction: number,
+  monthlyExpense: number,
   equity = "",
   signingBonus = ""
 ): SalaryData {
@@ -1158,6 +1224,7 @@ function createSalaryData(
     personalRate,
     companyRate,
     deduction,
+    monthlyExpense,
     equity,
     signingBonus,
   }
@@ -1175,6 +1242,7 @@ export default function App() {
   const [currentPersonalRate, setCurrentPersonalRate] = useState(12)
   const [currentCompanyRate, setCurrentCompanyRate] = useState(12)
   const [currentDeduction, setCurrentDeduction] = useState(0)
+  const [currentExpense, setCurrentExpense] = useState(0)
   const [currentEquity, setCurrentEquity] = useState("")
   const [currentSigning, setCurrentSigning] = useState("")
 
@@ -1188,6 +1256,7 @@ export default function App() {
   const [expectedPersonalRate, setExpectedPersonalRate] = useState(12)
   const [expectedCompanyRate, setExpectedCompanyRate] = useState(12)
   const [expectedDeduction, setExpectedDeduction] = useState(0)
+  const [expectedExpense, setExpectedExpense] = useState(0)
   const [expectedEquity, setExpectedEquity] = useState("")
   const [expectedSigning, setExpectedSigning] = useState("")
 
@@ -1198,6 +1267,7 @@ export default function App() {
   const [offerPersonalRate, setOfferPersonalRate] = useState(12)
   const [offerCompanyRate, setOfferCompanyRate] = useState(12)
   const [offerDeduction, setOfferDeduction] = useState(0)
+  const [offerExpense, setOfferExpense] = useState(0)
   const [offerEquity, setOfferEquity] = useState("")
   const [offerSigning, setOfferSigning] = useState("")
 
@@ -1233,10 +1303,11 @@ export default function App() {
         currentPersonalRate,
         currentCompanyRate,
         currentDeduction,
+        currentExpense,
         currentEquity,
         currentSigning
       ),
-    [currentBase, currentMonths, currentProvidentBase, currentPersonalRate, currentCompanyRate, currentDeduction, currentEquity, currentSigning]
+    [currentBase, currentMonths, currentProvidentBase, currentPersonalRate, currentCompanyRate, currentDeduction, currentExpense, currentEquity, currentSigning]
   )
   const currentSummary = useMemo(() => calcSummary(currentData, annualTaxBrackets, bonusTaxBrackets), [currentData, annualTaxBrackets, bonusTaxBrackets])
 
@@ -1253,6 +1324,7 @@ export default function App() {
         expectedPersonalRate,
         expectedCompanyRate,
         expectedDeduction,
+        expectedExpense,
         expectedEquity,
         expectedSigning
       ),
@@ -1263,6 +1335,7 @@ export default function App() {
       expectedPersonalRate,
       expectedCompanyRate,
       expectedDeduction,
+      expectedExpense,
       expectedEquity,
       expectedSigning,
     ]
@@ -1277,10 +1350,11 @@ export default function App() {
         offerPersonalRate,
         offerCompanyRate,
         offerDeduction,
+        offerExpense,
         offerEquity,
         offerSigning
       ),
-    [offerBase, offerMonths, offerProvidentBase, offerPersonalRate, offerCompanyRate, offerDeduction, offerEquity, offerSigning]
+    [offerBase, offerMonths, offerProvidentBase, offerPersonalRate, offerCompanyRate, offerDeduction, offerExpense, offerEquity, offerSigning]
   )
 
   /* 当在职待遇或涨幅变化时，反推期望月Base */
@@ -1379,6 +1453,7 @@ export default function App() {
                   label="公司缴纳比例"
                 />
                 <DeductionInput value={currentDeduction} onChange={setCurrentDeduction} />
+                <ExpenseInput value={currentExpense} onChange={setCurrentExpense} />
                 <ExtraModules
                   equity={currentEquity}
                   onEquityChange={setCurrentEquity}
@@ -1419,6 +1494,7 @@ export default function App() {
                   label="公司缴纳比例"
                 />
                 <DeductionInput value={expectedDeduction} onChange={setExpectedDeduction} />
+                <ExpenseInput value={expectedExpense} onChange={setExpectedExpense} />
                 <ExtraModules
                   equity={expectedEquity}
                   onEquityChange={setExpectedEquity}
@@ -1445,6 +1521,7 @@ export default function App() {
               <RateSlider value={offerPersonalRate} onChange={setOfferPersonalRate} label="个人缴纳比例" />
               <RateSlider value={offerCompanyRate} onChange={setOfferCompanyRate} label="公司缴纳比例" />
               <DeductionInput value={offerDeduction} onChange={setOfferDeduction} />
+              <ExpenseInput value={offerExpense} onChange={setOfferExpense} />
               <ExtraModules
                 equity={offerEquity}
                 onEquityChange={setOfferEquity}
