@@ -34,7 +34,6 @@ type BgMode = "flow" | "rain" | "solid"
 type BgColor = "#050510" | "#0a0a1a" | "#111122" | "#1a0a14"
 
 /* ===================== 工具函数 ===================== */
-const filterNumeric = (value: string) => value.replace(/\D/g, "")
 const formatMoney = (n: number) => `¥${n.toLocaleString()}`
 const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v))
 
@@ -70,6 +69,22 @@ function calcSummary(data: SalaryData): Summary {
   }
 }
 
+const filterNumeric = (value: string) => value.replace(/\D/g, "")
+const filterNumber = (value: string) => {
+  let seenDot = false
+  return value
+    .split("")
+    .filter((ch) => {
+      if (ch === ".") {
+        if (seenDot) return false
+        seenDot = true
+        return true
+      }
+      return /^\d$/.test(ch)
+    })
+    .join("")
+}
+
 /* ===================== NumericInput ===================== */
 const ALLOWED_KEYS = new Set([
   "Backspace",
@@ -99,31 +114,34 @@ const ALLOWED_KEYS = new Set([
 interface NumericInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange" | "value"> {
   value: string
   onChange: (value: string) => void
+  allowDecimal?: boolean
 }
 
-function NumericInput({ value, onChange, className, ...props }: NumericInputProps) {
+function NumericInput({ value, onChange, allowDecimal, className, ...props }: NumericInputProps) {
   const inputRef = useRef<HTMLInputElement>(null)
+  const filter = allowDecimal ? filterNumber : filterNumeric
   return (
     <Input
       ref={inputRef}
-      inputMode="numeric"
+      inputMode={allowDecimal ? "decimal" : "numeric"}
       value={value}
       onKeyDown={(e) => {
         if (e.ctrlKey || e.metaKey) return
         if (ALLOWED_KEYS.has(e.key)) return
         if (/^\d$/.test(e.key)) return
+        if (allowDecimal && e.key === ".") return
         e.preventDefault()
       }}
       onPaste={(e) => {
         e.preventDefault()
         const paste = e.clipboardData.getData("text")
-        const digits = filterNumeric(paste)
+        const digits = filter(paste)
         const input = e.currentTarget
         const start = input.selectionStart ?? value.length
         const end = input.selectionEnd ?? value.length
         onChange(value.slice(0, start) + digits + value.slice(end))
       }}
-      onChange={(e) => onChange(filterNumeric(e.target.value))}
+      onChange={(e) => onChange(filter(e.target.value))}
       className={cn("text-right", className)}
       {...props}
     />
@@ -949,7 +967,8 @@ export default function App() {
   const [currentSigning, setCurrentSigning] = useState("")
 
   /* 期望 */
-  const [increasePercent, setIncreasePercent] = useState(20)
+  const [increasePercent, setIncreasePercent] = useState("20")
+  const increasePercentNum = Number(increasePercent)
   const [expectedBase, setExpectedBase] = useState(30000)
   const [expectedMonths, setExpectedMonths] = useState(14)
   const [expectedProvidentBase, setExpectedProvidentBase] = useState(0)
@@ -1002,8 +1021,8 @@ export default function App() {
   const currentSummary = useMemo(() => calcSummary(currentData), [currentData])
 
   const expectedAnnualPackage = useMemo(() => {
-    return Math.round(currentSummary.annualTotalPackage * (1 + increasePercent / 100))
-  }, [currentSummary.annualTotalPackage, increasePercent])
+    return Math.round(currentSummary.annualTotalPackage * (1 + increasePercentNum / 100))
+  }, [currentSummary.annualTotalPackage, increasePercentNum])
 
   const expectedData = useMemo(
     () =>
@@ -1071,14 +1090,26 @@ export default function App() {
                   <span className="text-accent">{formatMoney(expectedAnnualPackage)}</span>
                 </span>
                 <NumericInput
-                  value={String(increasePercent)}
-                  onChange={(v) => setIncreasePercent(clamp(Number(v || 0), 0, 100))}
+                  value={increasePercent}
+                  onChange={(v) => {
+                    const num = Number(v)
+                    if (v === "" || (num >= 0 && num <= 100)) {
+                      setIncreasePercent(v)
+                    }
+                  }}
+                  onBlur={() => {
+                    const num = Number(increasePercent)
+                    if (Number.isFinite(num)) {
+                      setIncreasePercent(num.toFixed(2))
+                    }
+                  }}
+                  allowDecimal
                   className="w-20 text-accent"
                 />
               </div>
               <Slider
-                value={[increasePercent]}
-                onValueChange={(v) => setIncreasePercent(v[0])}
+                value={[increasePercentNum]}
+                onValueChange={(v) => setIncreasePercent(v[0].toFixed(2))}
                 min={0}
                 max={100}
                 step={1}
@@ -1131,7 +1162,7 @@ export default function App() {
                     if (currentSummary.annualTotalPackage > 0) {
                       const newAnnual = v * expectedMonths + Number(expectedEquity || 0) + Number(expectedSigning || 0)
                       setIncreasePercent(
-                        Math.round(((newAnnual / currentSummary.annualTotalPackage) - 1) * 100)
+                        (((newAnnual / currentSummary.annualTotalPackage) - 1) * 100).toFixed(2)
                       )
                     }
                   }}
