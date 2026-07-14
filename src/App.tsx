@@ -138,20 +138,45 @@ interface BaseInputSliderProps {
 }
 
 function BaseInputSlider({ value, onChange, label }: BaseInputSliderProps) {
+  const [inputValue, setInputValue] = useState(String(value))
+
+  useEffect(() => {
+    setInputValue(String(value))
+  }, [value])
+
+  const commit = (raw: string) => {
+    if (raw === "") {
+      setInputValue(String(value))
+      return
+    }
+    const num = clamp(Number(raw), MIN_BASE, MAX_BASE)
+    setInputValue(String(num))
+    onChange(num)
+  }
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <span className="text-xs text-dim">{label}</span>
         <NumericInput
-          value={String(value)}
-          onChange={(v) => onChange(clamp(Number(v || 0), MIN_BASE, MAX_BASE))}
+          value={inputValue}
+          onChange={(v) => {
+            setInputValue(v)
+            if (v !== "") {
+              onChange(clamp(Number(v), MIN_BASE, MAX_BASE))
+            }
+          }}
+          onBlur={() => commit(inputValue)}
           className="w-24 text-accent"
           placeholder="25000"
         />
       </div>
       <Slider
         value={[value]}
-        onValueChange={(v) => onChange(v[0])}
+        onValueChange={(v) => {
+          onChange(v[0])
+          setInputValue(String(v[0]))
+        }}
         min={MIN_BASE}
         max={MAX_BASE}
         step={1000}
@@ -334,12 +359,23 @@ function SalarySummary({ data, label }: SalarySummaryProps) {
             {s.signingNum > 0 ? "已填写" : "未填写"}
           </div>
         </div>
-        <div className="cyber-panel col-span-2 border-glow p-3 sm:col-span-3">
+        <div className="cyber-panel col-span-2 border-glow bg-black/60 p-3 sm:col-span-3">
           <div className="text-[9px] uppercase tracking-wider text-accent">年包总额</div>
-          <div className="mt-1 text-base font-bold text-accent neon-cyan">
+          <div
+            className="mt-1 text-lg font-bold text-accent"
+            style={{
+              textShadow:
+                "0 0 8px rgba(0,240,255,0.9), 0 0 16px rgba(0,240,255,0.6), 0 0 28px rgba(0,240,255,0.3)",
+            }}
+          >
             {formatMoney(s.annualTotalPackage)}
           </div>
-          <div className="mt-0.5 text-[10px] text-dim">
+          <div
+            className="mt-0.5 text-[10px] text-dim"
+            style={{
+              textShadow: "0 1px 2px rgba(0,0,0,0.8)",
+            }}
+          >
             现金{formatMoney(s.annualCash)}
             {s.equityNum > 0 ? ` + 股权${formatMoney(s.equityNum)}` : ""}
             {s.signingNum > 0 ? ` + 签字费${formatMoney(s.signingNum)}` : ""}
