@@ -30,7 +30,7 @@ interface SalaryData {
   signingBonus: string
 }
 
-type TabKey = "expected" | "offer" | "diff" | "lookup"
+type TabKey = "expected" | "offer" | "diff" | "lookup" | "tax"
 type BgMode = "flow" | "rain" | "solid"
 type BgColor = "#050510" | "#0a0a1a" | "#111122" | "#1a0a14"
 
@@ -38,8 +38,13 @@ type BgColor = "#050510" | "#0a0a1a" | "#111122" | "#1a0a14"
 const formatMoney = (n: number) => `¥${n.toLocaleString()}`
 const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v))
 
-/* 个人所得税计算（工资薪金综合所得 + 年终奖单独计税） */
-const ANNUAL_TAX_BRACKETS = [
+interface TaxBracket {
+  limit: number
+  rate: number
+  deduction: number
+}
+
+const DEFAULT_ANNUAL_TAX_BRACKETS: TaxBracket[] = [
   { limit: 36000, rate: 0.03, deduction: 0 },
   { limit: 144000, rate: 0.1, deduction: 2520 },
   { limit: 300000, rate: 0.2, deduction: 16920 },
@@ -49,7 +54,7 @@ const ANNUAL_TAX_BRACKETS = [
   { limit: Infinity, rate: 0.45, deduction: 181920 },
 ]
 
-const BONUS_TAX_BRACKETS = [
+const DEFAULT_BONUS_TAX_BRACKETS: TaxBracket[] = [
   { limit: 3000, rate: 0.03, deduction: 0 },
   { limit: 12000, rate: 0.1, deduction: 210 },
   { limit: 25000, rate: 0.2, deduction: 1410 },
@@ -59,16 +64,16 @@ const BONUS_TAX_BRACKETS = [
   { limit: Infinity, rate: 0.45, deduction: 15160 },
 ]
 
-function calcAnnualTax(taxableIncome: number): number {
+function calcAnnualTax(taxableIncome: number, brackets: TaxBracket[]): number {
   if (taxableIncome <= 0) return 0
-  const bracket = ANNUAL_TAX_BRACKETS.find((b) => taxableIncome <= b.limit) || ANNUAL_TAX_BRACKETS[ANNUAL_TAX_BRACKETS.length - 1]
+  const bracket = brackets.find((b) => taxableIncome <= b.limit) || brackets[brackets.length - 1]
   return Math.max(0, taxableIncome * bracket.rate - bracket.deduction)
 }
 
-function calcBonusTax(bonus: number): number {
+function calcBonusTax(bonus: number, brackets: TaxBracket[]): number {
   if (bonus <= 0) return 0
   const monthlyAvg = bonus / 12
-  const bracket = BONUS_TAX_BRACKETS.find((b) => monthlyAvg <= b.limit) || BONUS_TAX_BRACKETS[BONUS_TAX_BRACKETS.length - 1]
+  const bracket = brackets.find((b) => monthlyAvg <= b.limit) || brackets[brackets.length - 1]
   return Math.max(0, bonus * bracket.rate - bracket.deduction)
 }
 
@@ -86,7 +91,11 @@ interface Summary {
   annualTotalAfterTax: number
 }
 
-function calcSummary(data: SalaryData): Summary {
+function calcSummary(
+  data: SalaryData,
+  annualBrackets: TaxBracket[],
+  bonusBrackets: TaxBracket[]
+): Summary {
   const annualCash = data.monthlyBase * data.months
   const monthlyPersonal = Math.round((data.providentBase * data.personalRate) / 100)
   const monthlyCompany = Math.round((data.providentBase * data.companyRate) / 100)
@@ -101,9 +110,9 @@ function calcSummary(data: SalaryData): Summary {
   const annualDeduction = data.deduction * 12
   const annualPersonalProvident = monthlyPersonal * 12
   const taxableIncome = Math.max(0, annualSalary - 60000 - annualPersonalProvident - annualDeduction)
-  const annualSalaryTax = calcAnnualTax(taxableIncome)
+  const annualSalaryTax = calcAnnualTax(taxableIncome, annualBrackets)
   const annualSalaryAfterTax = annualSalary - annualSalaryTax
-  const annualBonusTax = calcBonusTax(annualBonus)
+  const annualBonusTax = calcBonusTax(annualBonus, bonusBrackets)
   const annualBonusAfterTax = annualBonus - annualBonusTax
   const annualTotalAfterTax = annualSalaryAfterTax + annualBonusAfterTax + equityNum + signingNum
 
@@ -395,10 +404,12 @@ function ExtraModules({ equity, onEquityChange, signingBonus, onSigningBonusChan
 interface SalarySummaryProps {
   data: SalaryData
   label?: string
+  annualBrackets: TaxBracket[]
+  bonusBrackets: TaxBracket[]
 }
 
-function SalarySummary({ data, label }: SalarySummaryProps) {
-  const s = useMemo(() => calcSummary(data), [data])
+function SalarySummary({ data, label, annualBrackets, bonusBrackets }: SalarySummaryProps) {
+  const s = useMemo(() => calcSummary(data, annualBrackets, bonusBrackets), [data, annualBrackets, bonusBrackets])
   return (
     <div className="space-y-3">
       {label && <h4 className="text-xs font-medium text-accent">{label}</h4>}
@@ -498,14 +509,18 @@ function DiffView({
   offer,
   title,
   baselineLabel,
+  annualBrackets,
+  bonusBrackets,
 }: {
   baseline: SalaryData
   offer: SalaryData
   title: string
   baselineLabel: string
+  annualBrackets: TaxBracket[]
+  bonusBrackets: TaxBracket[]
 }) {
-  const e = useMemo(() => calcSummary(baseline), [baseline])
-  const o = useMemo(() => calcSummary(offer), [offer])
+  const e = useMemo(() => calcSummary(baseline, annualBrackets, bonusBrackets), [baseline, annualBrackets, bonusBrackets])
+  const o = useMemo(() => calcSummary(offer, annualBrackets, bonusBrackets), [offer, annualBrackets, bonusBrackets])
 
   const diff = (a: number, b: number): DiffItem["state"] => {
     if (b > a) return "up"
@@ -761,6 +776,103 @@ function SalaryTable() {
         <span className="text-success">绿色</span> = 16薪及以上 &nbsp;&nbsp;
         <span className="text-subtle">灰色</span> = 12薪
       </p>
+    </div>
+  )
+}
+
+/* ===================== TaxBracketsEditor ===================== */
+interface TaxBracketsEditorProps {
+  title: string
+  brackets: TaxBracket[]
+  onChange: (brackets: TaxBracket[]) => void
+  onReset: () => void
+  rateUnit?: string
+}
+
+function TaxBracketsEditor({ title, brackets, onChange, onReset, rateUnit = "%" }: TaxBracketsEditorProps) {
+  const update = (index: number, field: keyof TaxBracket, value: number) => {
+    const next = brackets.map((b, i) => (i === index ? { ...b, [field]: value } : b))
+    onChange(next)
+  }
+
+  return (
+    <div className="cyber-panel space-y-3 p-4">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-medium text-accent">{title}</span>
+        <button
+          onClick={onReset}
+          className="rounded-md border border-accent/20 px-2 py-1 text-[10px] text-accent transition-colors hover:bg-accent/10"
+        >
+          恢复默认
+        </button>
+      </div>
+      <div className="min-w-[400px]">
+        <div className="grid grid-cols-[1fr_2fr_2fr_2fr] gap-2 border-b border-accent/10 pb-2 text-[10px] text-subtle">
+          <span>级数</span>
+          <span className="text-center">收入上限</span>
+          <span className="text-center">税率 ({rateUnit})</span>
+          <span className="text-center">速算扣除数</span>
+        </div>
+        {brackets.map((b, i) => (
+          <div key={i} className="grid grid-cols-[1fr_2fr_2fr_2fr] gap-2 py-1 text-xs">
+            <span className="text-dim">{i + 1}</span>
+            <div className="text-center">
+              {b.limit === Infinity ? (
+                <span className="text-dim">以上</span>
+              ) : (
+                <NumericInput
+                  value={String(b.limit)}
+                  onChange={(v) => update(i, "limit", Number(v || 0))}
+                  className="h-6 text-accent"
+                />
+              )}
+            </div>
+            <NumericInput
+              value={String(Math.round(b.rate * 10000) / 100)}
+              onChange={(v) => update(i, "rate", Number(v || 0) / 100)}
+              allowDecimal
+              className="h-6 text-accent"
+            />
+            <NumericInput
+              value={String(b.deduction)}
+              onChange={(v) => update(i, "deduction", Number(v || 0))}
+              className="h-6 text-accent"
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function TaxBracketsTab({
+  annualBrackets,
+  onAnnualChange,
+  bonusBrackets,
+  onBonusChange,
+}: {
+  annualBrackets: TaxBracket[]
+  onAnnualChange: (brackets: TaxBracket[]) => void
+  bonusBrackets: TaxBracket[]
+  onBonusChange: (brackets: TaxBracket[]) => void
+}) {
+  return (
+    <div className="animate-in space-y-4">
+      <TaxBracketsEditor
+        title="工资薪金综合所得 · 年度税率表"
+        brackets={annualBrackets}
+        onChange={onAnnualChange}
+        onReset={() => onAnnualChange(DEFAULT_ANNUAL_TAX_BRACKETS.map((b) => ({ ...b })))}
+      />
+      <TaxBracketsEditor
+        title="年终奖单独计税 · 月度税率表"
+        brackets={bonusBrackets}
+        onChange={onBonusChange}
+        onReset={() => onBonusChange(DEFAULT_BONUS_TAX_BRACKETS.map((b) => ({ ...b })))}
+      />
+      <div className="text-[10px] text-subtle">
+        修改税率表后，当前、期望、Offer 的税后收入会实时重算。恢复默认可回到中国个人所得税现行税率。
+      </div>
     </div>
   )
 }
@@ -1089,6 +1201,10 @@ export default function App() {
   const [offerEquity, setOfferEquity] = useState("")
   const [offerSigning, setOfferSigning] = useState("")
 
+  /* 税率表 */
+  const [annualTaxBrackets, setAnnualTaxBrackets] = useState<TaxBracket[]>(DEFAULT_ANNUAL_TAX_BRACKETS)
+  const [bonusTaxBrackets, setBonusTaxBrackets] = useState<TaxBracket[]>(DEFAULT_BONUS_TAX_BRACKETS)
+
   /* localStorage 背景偏好 */
   useEffect(() => {
     try {
@@ -1122,7 +1238,7 @@ export default function App() {
       ),
     [currentBase, currentMonths, currentProvidentBase, currentPersonalRate, currentCompanyRate, currentDeduction, currentEquity, currentSigning]
   )
-  const currentSummary = useMemo(() => calcSummary(currentData), [currentData])
+  const currentSummary = useMemo(() => calcSummary(currentData, annualTaxBrackets, bonusTaxBrackets), [currentData, annualTaxBrackets, bonusTaxBrackets])
 
   const expectedAnnualPackage = useMemo(() => {
     return Math.round(currentSummary.annualTotalPackage * (1 + increaseCommitted / 100))
@@ -1182,6 +1298,7 @@ export default function App() {
     { key: "offer", label: "Offer汇总" },
     { key: "diff", label: "对比分析" },
     { key: "lookup", label: "年包速查" },
+    { key: "tax", label: "税率表" },
   ]
 
   const tabContent = () => {
@@ -1268,7 +1385,7 @@ export default function App() {
                   signingBonus={currentSigning}
                   onSigningBonusChange={setCurrentSigning}
                 />
-                <SalarySummary data={currentData} />
+                <SalarySummary data={currentData} annualBrackets={annualTaxBrackets} bonusBrackets={bonusTaxBrackets} />
               </div>
 
               <div className="cyber-panel space-y-4 p-4">
@@ -1308,7 +1425,7 @@ export default function App() {
                   signingBonus={expectedSigning}
                   onSigningBonusChange={setExpectedSigning}
                 />
-                <SalarySummary data={expectedData} label="期望年包汇总" />
+                <SalarySummary data={expectedData} label="期望年包汇总" annualBrackets={annualTaxBrackets} bonusBrackets={bonusTaxBrackets} />
               </div>
             </div>
           </div>
@@ -1334,7 +1451,7 @@ export default function App() {
                 signingBonus={offerSigning}
                 onSigningBonusChange={setOfferSigning}
               />
-              <SalarySummary data={offerData} label="Offer 年包汇总" />
+              <SalarySummary data={offerData} label="Offer 年包汇总" annualBrackets={annualTaxBrackets} bonusBrackets={bonusTaxBrackets} />
             </div>
           </div>
         )
@@ -1346,12 +1463,16 @@ export default function App() {
               baselineLabel="当前"
               baseline={currentData}
               offer={offerData}
+              annualBrackets={annualTaxBrackets}
+              bonusBrackets={bonusTaxBrackets}
             />
             <DiffView
               title="期望 vs Offer 逐项对比"
               baselineLabel="期望"
               baseline={expectedData}
               offer={offerData}
+              annualBrackets={annualTaxBrackets}
+              bonusBrackets={bonusTaxBrackets}
             />
           </div>
         )
@@ -1359,6 +1480,17 @@ export default function App() {
         return (
           <div className="animate-in space-y-4">
             <SalaryTable />
+          </div>
+        )
+      case "tax":
+        return (
+          <div className="animate-in space-y-4">
+            <TaxBracketsTab
+              annualBrackets={annualTaxBrackets}
+              onAnnualChange={setAnnualTaxBrackets}
+              bonusBrackets={bonusTaxBrackets}
+              onBonusChange={setBonusTaxBrackets}
+            />
           </div>
         )
       default:
