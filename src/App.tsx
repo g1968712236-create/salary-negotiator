@@ -536,16 +536,42 @@ function DiffView({ expected, offer }: { expected: SalaryData; offer: SalaryData
 
 /* ===================== SalaryTable ===================== */
 function SalaryTable() {
+  const [minBaseInput, setMinBaseInput] = useState(MIN_BASE)
+  const [maxBaseInput, setMaxBaseInput] = useState(40000)
+
+  const minBase = Math.max(100, Math.min(minBaseInput, maxBaseInput))
+  const maxBase = Math.max(minBase, Math.min(10000000, maxBaseInput))
+
   const bases = useMemo(() => {
     const arr: number[] = []
-    for (let b = MIN_BASE; b <= MAX_BASE; b += 1000) arr.push(b)
+    for (let b = minBase; b <= maxBase; b += 1000) arr.push(b)
     return arr
-  }, [])
+  }, [minBase, maxBase])
 
   return (
-    <div className="cyber-panel p-4">
-      <div className="mb-3 text-xs text-dim">
-        月Base ¥25,000 ~ ¥40,000（步进1000）x 12~18薪
+    <div className="cyber-panel space-y-4 p-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-1">
+          <span className="text-xs text-dim">最低月Base</span>
+          <NumericInput
+            value={String(minBaseInput)}
+            onChange={(v) => setMinBaseInput(Number(v || 100))}
+            className="text-accent"
+            placeholder="100"
+          />
+        </div>
+        <div className="space-y-1">
+          <span className="text-xs text-dim">最高月Base</span>
+          <NumericInput
+            value={String(maxBaseInput)}
+            onChange={(v) => setMaxBaseInput(Number(v || 100))}
+            className="text-accent"
+            placeholder="40000"
+          />
+        </div>
+      </div>
+      <div className="text-xs text-dim">
+        月Base ¥{minBase.toLocaleString()} ~ ¥{maxBase.toLocaleString()}（步进1000）x 12~18薪
       </div>
       <Table>
         <TableHeader>
@@ -582,7 +608,7 @@ function SalaryTable() {
           ))}
         </TableBody>
       </Table>
-      <p className="mt-3 text-[10px] text-subtle">
+      <p className="text-[10px] text-subtle">
         <span className="text-success">绿色</span> = 16薪及以上 &nbsp;&nbsp;
         <span className="text-subtle">灰色</span> = 12薪
       </p>
