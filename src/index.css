@@ -1,0 +1,199 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-base: #050510;
+  --color-base-2: #0a0a1a;
+  --color-base-3: #111122;
+  --color-foreground: #e0e8ff;
+  --color-dim: #8899aa;
+  --color-subtle: #556677;
+  --color-muted: #334455;
+  --color-accent: #00f0ff;
+  --color-accent-secondary: #ff00a0;
+  --color-accent-tertiary: #b829dd;
+  --color-success: #00ff88;
+  --color-danger: #ff3366;
+  --color-warning: #ffcc00;
+  --color-border: #1a1a3a;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100vh;
+}
+
+body {
+  background-color: var(--color-base);
+  color: var(--color-foreground);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@layer components {
+  .cyber-panel {
+    position: relative;
+    background: rgba(10, 10, 30, 0.7);
+    border: 1px solid rgba(0, 240, 255, 0.15);
+    border-radius: 10px;
+    box-shadow:
+      0 0 20px rgba(0, 240, 255, 0.05),
+      inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(12px) saturate(120%);
+    overflow: hidden;
+  }
+
+  .cyber-panel::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(0, 240, 255, 0.4),
+      transparent
+    );
+    pointer-events: none;
+  }
+
+  .cyber-panel::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(0, 240, 255, 0.2),
+      transparent
+    );
+    pointer-events: none;
+  }
+
+  .neon-cyan {
+    color: #00f0ff;
+    text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+  }
+
+  .neon-pink {
+    color: #ff00a0;
+    text-shadow: 0 0 8px rgba(255, 0, 160, 0.4);
+  }
+
+  .neon-purple {
+    color: #b829dd;
+    text-shadow: 0 0 8px rgba(184, 41, 221, 0.4);
+  }
+
+  .neon-green {
+    color: #00ff88;
+    text-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
+  }
+
+  .neon-red {
+    color: #ff3366;
+    text-shadow: 0 0 8px rgba(255, 51, 102, 0.4);
+  }
+
+  .tab-active {
+    background: rgba(0, 240, 255, 0.08);
+    color: #00f0ff;
+    border: 1px solid rgba(0, 240, 255, 0.2);
+    box-shadow: 0 0 12px rgba(0, 240, 255, 0.08);
+  }
+
+  .month-btn {
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    background: rgba(255, 255, 255, 0.02);
+    color: #445566;
+  }
+
+  .month-btn-active {
+    background: rgba(0, 240, 255, 0.1);
+    color: #00f0ff;
+    border: 1px solid rgba(0, 240, 255, 0.25);
+    box-shadow: 0 0 6px rgba(0, 240, 255, 0.1);
+  }
+
+  .border-glow {
+    animation: borderGlow 3s ease-in-out infinite;
+  }
+
+  .animate-in {
+    animation: fadeIn 250ms ease-out;
+  }
+
+  .cyber-grid {
+    background-image:
+      linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+}
+
+@keyframes borderGlow {
+  0%,
+  100% {
+    border-color: rgba(0, 240, 255, 0.2);
+  }
+  50% {
+    border-color: rgba(0, 240, 255, 0.4);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+[data-slot="slider-track"] {
+  background: rgba(0, 240, 255, 0.1) !important;
+}
+[data-slot="slider-range"] {
+  background: linear-gradient(90deg, #00f0ff, #b829dd) !important;
+}
+[data-slot="slider-thumb"] {
+  border-color: #00f0ff !important;
+  background: #050510 !important;
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.4) !important;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 240, 255, 0.15);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 240, 255, 0.25);
+}
