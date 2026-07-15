@@ -1600,7 +1600,7 @@ export default function App() {
 
       <main className="mx-auto max-w-[1152px] px-4 pb-24 pt-6 sm:px-6">
         <div className="mb-6 text-center">
-          <h1 className="text-xl font-medium text-accent neon-cyan">谈薪薪资计算器</h1>
+          <h1 className="text-xl font-medium text-accent neon-cyan">Offer薪资速算器</h1>
           <p className="mt-1 text-xs text-subtle">快速对比不同 Base、薪数与公积金方案</p>
         </div>
 
