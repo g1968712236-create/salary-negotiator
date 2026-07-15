@@ -10,6 +10,17 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
+import {
+  Bar,
+  CartesianGrid,
+  ComposedChart,
+  Legend,
+  Line,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts"
 
 /* ===================== 常量 ===================== */
 const MIN_BASE = 100
@@ -723,6 +734,201 @@ function DiffView({
         <span className="flex items-center gap-1">
           <span className="inline-block h-2 w-2 rounded-full bg-subtle" />
           平
+        </span>
+      </div>
+    </div>
+  )
+}
+
+/* ===================== SalaryChart ===================== */
+interface ChartDimension {
+  key: keyof Summary | "monthlyBase"
+  label: string
+  source?: "data" | "summary"
+}
+
+const CHART_DIMENSIONS: ChartDimension[] = [
+  { key: "monthlyBase", label: "月Base" },
+  { key: "annualCash", label: "现金年总收入" },
+  { key: "annualProvidentTotal", label: "年公积金总额" },
+  { key: "annualTotalPackage", label: "年包总额" },
+  { key: "annualTotalAfterTax", label: "税后收入" },
+  { key: "netIncome", label: "净收入" },
+]
+
+const CHART_COLORS = {
+  current: "#00f0ff",
+  expected: "#b829dd",
+  offer: "#ffcc00",
+  growth: "#00ff88",
+}
+
+function formatWan(n: number) {
+  if (Math.abs(n) >= 10000) return `${(n / 10000).toFixed(1)}w`
+  return n.toLocaleString()
+}
+
+function SalaryChart({
+  current,
+  expected,
+  offer,
+  annualBrackets,
+  bonusBrackets,
+}: {
+  current: SalaryData
+  expected: SalaryData
+  offer: SalaryData
+  annualBrackets: TaxBracket[]
+  bonusBrackets: TaxBracket[]
+}) {
+  const currentSummary = useMemo(
+    () => calcSummary(current, annualBrackets, bonusBrackets),
+    [current, annualBrackets, bonusBrackets]
+  )
+  const expectedSummary = useMemo(
+    () => calcSummary(expected, annualBrackets, bonusBrackets),
+    [expected, annualBrackets, bonusBrackets]
+  )
+  const offerSummary = useMemo(
+    () => calcSummary(offer, annualBrackets, bonusBrackets),
+    [offer, annualBrackets, bonusBrackets]
+  )
+
+  const data = useMemo(() => {
+    return CHART_DIMENSIONS.map((dim) => {
+      const isBase = dim.key === "monthlyBase"
+      const cur = isBase ? current.monthlyBase : Number(currentSummary[dim.key as keyof Summary])
+      const exp = isBase ? expected.monthlyBase : Number(expectedSummary[dim.key as keyof Summary])
+      const off = isBase ? offer.monthlyBase : Number(offerSummary[dim.key as keyof Summary])
+      return {
+        name: dim.label,
+        当前岗位: cur,
+        期望岗位: exp,
+        Offer: off,
+        Offer涨幅: cur === 0 ? 0 : Number((((off - cur) / cur) * 100).toFixed(1)),
+        期望涨幅: cur === 0 ? 0 : Number((((exp - cur) / cur) * 100).toFixed(1)),
+      }
+    })
+  }, [currentSummary, expectedSummary, offerSummary, current, expected, offer])
+
+  const CustomTooltip = ({ active, payload, label }: {
+    active?: boolean
+    payload?: Array<{ color: string; name: string; value: number }>
+    label?: string
+  }) => {
+    if (!active || !payload || payload.length === 0) return null
+
+    const currentVal = payload.find((p) => p.name === "当前岗位")?.value ?? 0
+    const expectedVal = payload.find((p) => p.name === "期望岗位")?.value ?? 0
+    const offerVal = payload.find((p) => p.name === "Offer")?.value ?? 0
+    const expectedGrowth = currentVal === 0 ? 0 : ((expectedVal - currentVal) / currentVal) * 100
+    const offerGrowth = currentVal === 0 ? 0 : ((offerVal - currentVal) / currentVal) * 100
+
+    return (
+      <div className="rounded-lg border border-accent/20 bg-[#0a0a1a]/95 p-3 shadow-[0_0_20px_rgba(0,240,255,0.1)] backdrop-blur-md">
+        <div className="mb-2 text-xs font-semibold text-accent">{label}</div>
+        <div className="space-y-1.5 text-[11px]">
+          <div className="flex items-center justify-between gap-4">
+            <span className="flex items-center gap-1.5 text-dim">
+              <span className="h-2 w-2 rounded-full" style={{ background: CHART_COLORS.current }} />
+              当前岗位
+            </span>
+            <span className="text-foreground">{formatMoney(currentVal)}</span>
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <span className="flex items-center gap-1.5 text-dim">
+              <span className="h-2 w-2 rounded-full" style={{ background: CHART_COLORS.expected }} />
+              期望岗位
+            </span>
+            <span className="text-foreground">{formatMoney(expectedVal)}</span>
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <span className="flex items-center gap-1.5 text-dim">
+              <span className="h-2 w-2 rounded-full" style={{ background: CHART_COLORS.offer }} />
+              Offer
+            </span>
+            <span className="text-foreground">{formatMoney(offerVal)}</span>
+          </div>
+          <div className="mt-2 border-t border-white/10 pt-2 space-y-1">
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-subtle">期望 vs 当前</span>
+              <span className={expectedGrowth >= 0 ? "text-danger" : "text-success"}>
+                {expectedGrowth >= 0 ? "+" : ""}
+                {formatMoney(expectedVal - currentVal)} ({expectedGrowth.toFixed(1)}%)
+              </span>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-subtle">Offer vs 当前</span>
+              <span className={offerGrowth >= 0 ? "text-danger" : "text-success"}>
+                {offerGrowth >= 0 ? "+" : ""}
+                {formatMoney(offerVal - currentVal)} ({offerGrowth.toFixed(1)}%)
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="cyber-panel p-4">
+      <div className="mb-3 text-xs text-dim">当前岗位 / 期望岗位 / Offer 综合对比</div>
+      <div className="h-[360px] w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart data={data} margin={{ top: 16, right: 16, bottom: 8, left: 0 }}>
+            <CartesianGrid stroke="rgba(0,240,255,0.08)" strokeDasharray="3 3" />
+            <XAxis
+              dataKey="name"
+              tick={{ fill: "#8899aa", fontSize: 10 }}
+              axisLine={{ stroke: "rgba(0,240,255,0.15)" }}
+              tickLine={{ stroke: "rgba(0,240,255,0.1)" }}
+            />
+            <YAxis
+              yAxisId="left"
+              tick={{ fill: "#8899aa", fontSize: 10 }}
+              axisLine={{ stroke: "rgba(0,240,255,0.15)" }}
+              tickLine={{ stroke: "rgba(0,240,255,0.1)" }}
+              tickFormatter={(v) => formatWan(Number(v))}
+            />
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              tick={{ fill: "#8899aa", fontSize: 10 }}
+              axisLine={{ stroke: "rgba(0,255,136,0.2)" }}
+              tickLine={{ stroke: "rgba(0,255,136,0.1)" }}
+              tickFormatter={(v) => `${v}%`}
+            />
+            
+            <Tooltip content={<CustomTooltip />} />
+            
+            <Legend
+              wrapperStyle={{ fontSize: 11, color: "#8899aa" }}
+              iconType="circle"
+            />
+            
+            <Bar yAxisId="left" dataKey="当前岗位" fill={CHART_COLORS.current} radius={[4, 4, 0, 0]} maxBarSize={28} />
+            <Bar yAxisId="left" dataKey="期望岗位" fill={CHART_COLORS.expected} radius={[4, 4, 0, 0]} maxBarSize={28} />
+            <Bar yAxisId="left" dataKey="Offer" fill={CHART_COLORS.offer} radius={[4, 4, 0, 0]} maxBarSize={28} />
+            <Line
+              yAxisId="right"
+              type="monotone"
+              dataKey="Offer涨幅"
+              stroke={CHART_COLORS.growth}
+              strokeWidth={2}
+              dot={{ r: 3, fill: CHART_COLORS.growth, strokeWidth: 0 }}
+              activeDot={{ r: 5, fill: CHART_COLORS.growth }}
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-3 text-[10px] text-subtle">
+        <span className="flex items-center gap-1">
+          <span className="h-2 w-2 rounded-full" style={{ background: CHART_COLORS.current }} />
+          柱状图 = 金额
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="h-2 w-2 rounded-full" style={{ background: CHART_COLORS.growth }} />
+          折线图 = Offer 相对当前涨幅
         </span>
       </div>
     </div>
@@ -1535,6 +1741,13 @@ export default function App() {
       case "diff":
         return (
           <div className="animate-in space-y-4">
+            <SalaryChart
+              current={currentData}
+              expected={expectedData}
+              offer={offerData}
+              annualBrackets={annualTaxBrackets}
+              bonusBrackets={bonusTaxBrackets}
+            />
             <DiffView
               title="当前岗位 vs Offer 逐项对比"
               baselineLabel="当前"
