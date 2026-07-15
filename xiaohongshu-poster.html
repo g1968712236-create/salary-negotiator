@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>小红书宣传图 - Offer薪资速算器</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .poster {
+      width: 375px;
+      min-height: 500px;
+      background: linear-gradient(180deg, #fff9f5 0%, #ffffff 100%);
+      border-radius: 24px;
+      padding: 28px 24px 32px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .poster::before {
+      content: "";
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 180px;
+      height: 180px;
+      background: radial-gradient(circle, rgba(255, 122, 69, 0.12) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+    
+    .poster::after {
+      content: "";
+      position: absolute;
+      bottom: -80px;
+      left: -40px;
+      width: 200px;
+      height: 200px;
+      background: radial-gradient(circle, rgba(255, 196, 0, 0.1) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+    
+    .header {
+      position: relative;
+      z-index: 1;
+      margin-bottom: 20px;
+    }
+    
+    .tag {
+      display: inline-block;
+      background: #ff7a45;
+      color: white;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 12px;
+      margin-bottom: 12px;
+      letter-spacing: 0.5px;
+    }
+    
+    .title {
+      font-size: 26px;
+      font-weight: 800;
+      line-height: 1.35;
+      color: #1a1a1a;
+      margin-bottom: 10px;
+    }
+    
+    .title .highlight {
+      color: #ff7a45;
+      position: relative;
+    }
+    
+    .subtitle {
+      font-size: 14px;
+      color: #666;
+      line-height: 1.6;
+    }
+    
+    .features {
+      position: relative;
+      z-index: 1;
+      margin: 22px 0;
+    }
+    
+    .feature-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      background: white;
+      padding: 14px 16px;
+      border-radius: 16px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+      border: 1px solid rgba(0, 0, 0, 0.04);
+    }
+    
+    .feature-icon {
+      width: 32px;
+      height: 32px;
+      min-width: 32px;
+      background: linear-gradient(135deg, #ff7a45 0%, #ffc400 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 15px;
+    }
+    
+    .feature-text h3 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1a1a1a;
+      margin-bottom: 3px;
+    }
+    
+    .feature-text p {
+      font-size: 12px;
+      color: #888;
+      line-height: 1.5;
+    }
+    
+    .cta-box {
+      position: relative;
+      z-index: 1;
+      background: linear-gradient(135deg, #1a1a1a 0%, #333333 100%);
+      border-radius: 20px;
+      padding: 20px;
+      text-align: center;
+      color: white;
+      margin: 24px 0 18px;
+    }
+    
+    .cta-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    
+    .qr-code {
+      width: 150px;
+      height: 150px;
+      background: white;
+      border-radius: 12px;
+      padding: 8px;
+      margin: 0 auto 10px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    }
+    
+    .qr-code img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    
+    .url {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.85);
+      word-break: break-all;
+    }
+    
+    .footer {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+    }
+    
+    .hashtags {
+      font-size: 12px;
+      color: #ff7a45;
+      font-weight: 600;
+      line-height: 1.6;
+      margin-bottom: 8px;
+    }
+    
+    .disclaimer {
+      font-size: 10px;
+      color: #aaa;
+      line-height: 1.5;
+    }
+    
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+      .poster {
+        box-shadow: none;
+        border-radius: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="poster">
+    <div class="header">
+      <span class="tag">求职干货</span>
+      <h1 class="title">
+        Offer拿到手<br>
+        <span class="highlight">薪资算清楚</span> ✨
+      </h1>
+      <p class="subtitle">
+        3秒对比多家Offer待遇，谈薪前心里先有底，不再被HR牵着走
+      </p>
+    </div>
+    
+    <div class="features">
+      <div class="feature-item">
+        <div class="feature-icon">🎯</div>
+        <div class="feature-text">
+          <h3>期望反推</h3>
+          <p>输入当前待遇和期望涨幅，自动算出目标月Base</p>
+        </div>
+      </div>
+      
+      <div class="feature-item">
+        <div class="feature-icon">⚖️</div>
+        <div class="feature-text">
+          <h3>Offer横向PK</h3>
+          <p>9项指标逐项对比，年包差距一眼看清</p>
+        </div>
+      </div>
+      
+      <div class="feature-item">
+        <div class="feature-icon">📊</div>
+        <div class="feature-text">
+          <h3>年包速查表</h3>
+          <p>月Base 25K-40K × 12-18薪，完整对照</p>
+        </div>
+      </div>
+      
+      <div class="feature-item">
+        <div class="feature-icon">🔒</div>
+        <div class="feature-text">
+          <h3>打开即用</h3>
+          <p>纯前端工具，数据不上传，手机电脑都能用</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="cta-box">
+      <div class="cta-title">👇 扫码免费使用</div>
+      <div class="qr-code">
+        <img src="qr-code.png" alt="Offer薪资速算器二维码">
+      </div>
+      <div class="url">https://g1968712236-create.github.io/salary-negotiator/</div>
+    </div>
+    
+    <div class="footer">
+      <div class="hashtags">
+        #谈薪技巧 #Offer选择 #薪资谈判 #求职干货 #年终奖 #公积金
+      </div>
+      <div class="disclaimer">
+        工具结果仅供参考，具体薪资、公积金及税务以劳动合同和当地政策为准
+      </div>
+    </div>
+  </div>
+</body>
+</html>
