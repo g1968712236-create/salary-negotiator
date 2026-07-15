@@ -32,6 +32,20 @@
       overflow-x: hidden;
     }
 
+    /* SVG Icons */
+    .icon {
+      width: 1em;
+      height: 1em;
+      display: inline-block;
+      vertical-align: middle;
+      flex-shrink: 0;
+    }
+
+    .icon svg {
+      width: 100%;
+      height: 100%;
+    }
+
     /* Background effects */
     .glow-bg {
       position: fixed;
@@ -128,7 +142,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 16px;
+      font-size: 18px;
+      color: #fff;
     }
 
     .nav-links {
@@ -328,6 +343,7 @@
       align-items: center;
       justify-content: center;
       font-size: 24px;
+      color: var(--primary);
       margin-bottom: 20px;
     }
 
@@ -381,6 +397,7 @@
 
     .feature-card .icon {
       font-size: 28px;
+      color: var(--primary);
       margin-bottom: 16px;
     }
 
@@ -556,6 +573,85 @@
   </style>
 </head>
 <body>
+  <!-- SVG Icon Sprite -->
+  <svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <symbol id="icon-wallet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="6" width="20" height="12" rx="2"/>
+        <path d="M2 10h20"/>
+        <circle cx="6" cy="12" r="1" fill="currentColor" stroke="none"/>
+      </symbol>
+
+      <symbol id="icon-rocket" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2c0 0-5 6-5 11v3l-2 2h14l-2-2v-3c0-5-5-11-5-11z"/>
+        <path d="M12 22v-5"/>
+      </symbol>
+
+      <symbol id="icon-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M16 18l6-6-6-6"/>
+        <path d="M8 6l-6 6 6 6"/>
+      </symbol>
+
+      <symbol id="icon-calculator" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="4" y="2" width="16" height="20" rx="2"/>
+        <path d="M8 7h8"/>
+        <path d="M8 12h2"/>
+        <path d="M14 12h2"/>
+        <path d="M8 17h2"/>
+        <path d="M14 17h2"/>
+      </symbol>
+
+      <symbol id="icon-chart-bar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="10" width="4" height="10" rx="1"/>
+        <rect x="10" y="6" width="4" height="14" rx="1"/>
+        <rect x="17" y="14" width="4" height="6" rx="1"/>
+      </symbol>
+
+      <symbol id="icon-scale" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 4h20"/>
+        <path d="M12 4v4"/>
+        <path d="M8 8l4 4 4-4"/>
+        <path d="M6 12v9"/>
+        <path d="M18 12v9"/>
+        <rect x="2" y="21" width="8" height="3" rx="1"/>
+        <rect x="14" y="21" width="8" height="3" rx="1"/>
+      </symbol>
+
+      <symbol id="icon-target" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="9"/>
+        <circle cx="12" cy="12" r="5"/>
+        <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/>
+      </symbol>
+
+      <symbol id="icon-document" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="4" y="2" width="16" height="20" rx="2"/>
+        <path d="M8 7h8"/>
+        <path d="M8 12h8"/>
+        <path d="M8 17h5"/>
+      </symbol>
+
+      <symbol id="icon-table" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="1"/>
+        <path d="M3 9h18"/>
+        <path d="M3 15h18"/>
+        <path d="M9 3v18"/>
+        <path d="M15 3v18"/>
+      </symbol>
+
+      <symbol id="icon-palette" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="9"/>
+        <circle cx="9" cy="10" r="1.5" fill="currentColor" stroke="none"/>
+        <circle cx="15" cy="10" r="1.5" fill="currentColor" stroke="none"/>
+        <circle cx="12" cy="16" r="1.5" fill="currentColor" stroke="none"/>
+      </symbol>
+
+      <symbol id="icon-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="5" y="11" width="14" height="10" rx="2"/>
+        <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+      </symbol>
+    </defs>
+  </svg>
+
   <div class="glow-bg">
     <div class="glow-1"></div>
     <div class="glow-2"></div>
@@ -566,7 +662,9 @@
     <div class="container">
       <div class="nav-inner">
         <a href="https://g1968712236-create.github.io/salary-negotiator/" class="logo">
-          <span class="logo-icon">💰</span>
+          <span class="logo-icon">
+            <span class="icon"><svg><use href="#icon-wallet"/></svg></span>
+          </span>
           Offer薪资速算器
         </a>
         <div class="nav-links">
@@ -574,7 +672,10 @@
           <a href="#steps">使用步骤</a>
           <a href="#testimonials">用户反馈</a>
           <a href="https://github.com/g1968712236-create/salary-negotiator" target="_blank">GitHub</a>
-          <a href="https://g1968712236-create.github.io/salary-negotiator/" class="btn btn-primary">立即使用</a>
+          <a href="https://g1968712236-create.github.io/salary-negotiator/" class="btn btn-primary">
+            <span class="icon"><svg><use href="#icon-rocket"/></svg></span>
+            立即使用
+          </a>
         </div>
       </div>
     </div>
@@ -597,10 +698,12 @@
       
       <div class="hero-actions">
         <a href="https://g1968712236-create.github.io/salary-negotiator/" class="btn btn-primary btn-large">
-          🚀 免费使用工具
+          <span class="icon"><svg><use href="#icon-rocket"/></svg></span>
+          免费使用工具
         </a>
         <a href="https://github.com/g1968712236-create/salary-negotiator" target="_blank" class="btn btn-secondary btn-large">
-          📂 查看开源代码
+          <span class="icon"><svg><use href="#icon-code"/></svg></span>
+          查看开源代码
         </a>
       </div>
       
@@ -630,19 +733,25 @@
       
       <div class="cards-grid">
         <div class="card">
-          <div class="card-icon">😵</div>
+          <div class="card-icon">
+            <span class="icon"><svg><use href="#icon-calculator"/></svg></span>
+          </div>
           <h3>数字太多，算不过来</h3>
           <p>月薪、年终奖、公积金、绩效、补贴、期权……每一项都影响真实收入，手动计算容易漏算。</p>
         </div>
         
         <div class="card">
-          <div class="card-icon">😰</div>
-          <h3>怕报高被刷，报低吃亏</div>
+          <div class="card-icon">
+            <span class="icon"><svg><use href="#icon-chart-bar"/></svg></span>
+          </div>
+          <h3>怕报高被刷，报低吃亏</h3>
           <p>不知道自己的目标月 Base 该开多少，谈薪时心里没底，要么保守要么激进。</p>
         </div>
         
         <div class="card">
-          <div class="card-icon">🤯</div>
+          <div class="card-icon">
+            <span class="icon"><svg><use href="#icon-scale"/></svg></span>
+          </div>
           <h3>Offer 一多就纠结</h3>
           <p>A 公司月薪高但薪数少，B 公司底薪低但补贴多，到底哪个更划算？</p>
         </div>
@@ -659,37 +768,37 @@
       
       <div class="feature-row">
         <div class="feature-card">
-          <div class="icon">🎯</div>
+          <div class="icon"><svg><use href="#icon-target"/></svg></div>
           <h3>期望方案反推</h3>
           <p>输入当前待遇和期望涨幅，自动算出目标月 Base，谈薪报价更精准。</p>
         </div>
         
         <div class="feature-card">
-          <div class="icon">📝</div>
+          <div class="icon"><svg><use href="#icon-document"/></svg></div>
           <h3>Offer 汇总录入</h3>
           <p>录入月薪、薪数、公积金比例、补贴等，一键计算真实年包。</p>
         </div>
         
         <div class="feature-card">
-          <div class="icon">⚖️</div>
+          <div class="icon"><svg><use href="#icon-scale"/></svg></div>
           <h3>9 项指标对比</h3>
           <p>期望 vs Offer 逐项 PK，年包、税后、公积金差距一目了然。</p>
         </div>
         
         <div class="feature-card">
-          <div class="icon">📊</div>
+          <div class="icon"><svg><use href="#icon-table"/></svg></div>
           <h3>年包速查表</h3>
           <p>月 Base 25K~40K × 12~18 薪完整对照，快速定位自己在哪一档。</p>
         </div>
         
         <div class="feature-card">
-          <div class="icon">🎨</div>
+          <div class="icon"><svg><use href="#icon-palette"/></svg></div>
           <h3>动态背景切换</h3>
           <p>丝绸流场、雨落寒窗、纯色背景随心换，长时间使用也不累眼。</p>
         </div>
         
         <div class="feature-card">
-          <div class="icon">🔒</div>
+          <div class="icon"><svg><use href="#icon-lock"/></svg></div>
           <h3>纯前端隐私安全</h3>
           <p>所有计算在浏览器本地完成，薪资数据不上传服务器，隐私更安心。</p>
         </div>
@@ -776,7 +885,8 @@
         <h2>下一次谈薪，心里有数</h2>
         <p>免费、免注册、数据不上传。现在就打开工具，算一算你的 Offer 到底值多少。</p>
         <a href="https://g1968712236-create.github.io/salary-negotiator/" class="btn btn-primary btn-large">
-          🚀 立即免费使用
+          <span class="icon"><svg><use href="#icon-rocket"/></svg></span>
+          立即免费使用
         </a>
       </div>
     </div>
