@@ -2240,57 +2240,61 @@ export default function App() {
     switch (activeTab) {
       case "scenario":
         return (
-          <div className="animate-in space-y-4">
-            <div className="cyber-panel space-y-3 p-4">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-accent">方案列表</span>
-                <button
-                  onClick={addScenario}
-                  className="rounded-md border border-accent/20 px-3 py-1.5 text-xs text-accent transition-colors hover:bg-accent/10"
-                >
-                  + 新增 Offer
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {scenarios.map((s) => {
-                  const canDelete =
-                    s.role === "offer" && scenarios.filter((x) => x.role === "offer").length > 1
-                  return (
-                    <div
-                      key={s.id}
-                      onClick={() => setActiveScenarioId(s.id)}
-                      className={cn(
-                        "group flex cursor-pointer items-center justify-between gap-2 rounded-lg border px-3 py-2 text-xs transition-all",
-                        activeScenarioId === s.id
-                          ? "border-accent/30 bg-accent/10 text-accent"
-                          : "border-white/[0.05] bg-black/20 text-dim hover:border-accent/15"
-                      )}
-                    >
-                      <input
-                        value={s.name}
-                        onChange={(e) => renameScenario(s.id, e.target.value)}
+          <div className="animate-in">
+            <div className="sticky top-[5.75rem] z-30">
+              <div className="cyber-panel space-y-3 p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-accent">方案列表</span>
+                  <button
+                    onClick={addScenario}
+                    className="rounded-md border border-accent/20 px-3 py-1.5 text-xs text-accent transition-colors hover:bg-accent/10"
+                  >
+                    + 新增 Offer
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {scenarios.map((s) => {
+                    const canDelete =
+                      s.role === "offer" && scenarios.filter((x) => x.role === "offer").length > 1
+                    return (
+                      <div
+                        key={s.id}
+                        onClick={() => setActiveScenarioId(s.id)}
                         className={cn(
-                          "w-20 bg-transparent text-xs outline-none",
-                          activeScenarioId === s.id ? "text-accent" : "text-dim group-hover:text-foreground"
+                          "group flex cursor-pointer items-center justify-between gap-2 rounded-lg border px-3 py-2 text-xs transition-all",
+                          activeScenarioId === s.id
+                            ? "border-accent/30 bg-accent/10 text-accent"
+                            : "border-white/[0.05] bg-black/20 text-dim hover:border-accent/15"
                         )}
-                      />
-                      {canDelete && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            removeScenario(s.id)
-                          }}
-                          className="ml-1 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded text-[10px] leading-none text-subtle transition-colors hover:bg-danger/10 hover:text-danger"
-                          title="删除该方案"
-                        >
-                          ×
-                        </button>
-                      )}
-                    </div>
-                  )
-                })}
+                      >
+                        <input
+                          value={s.name}
+                          onChange={(e) => renameScenario(s.id, e.target.value)}
+                          className={cn(
+                            "w-20 bg-transparent text-xs outline-none",
+                            activeScenarioId === s.id ? "text-accent" : "text-dim group-hover:text-foreground"
+                          )}
+                        />
+                        {canDelete && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              removeScenario(s.id)
+                            }}
+                            className="ml-1 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded text-[10px] leading-none text-subtle transition-colors hover:bg-danger/10 hover:text-danger"
+                            title="删除该方案"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             </div>
+
+            <div className="space-y-4 pt-4">
 
             {activeScenario?.role === "expected" && (
               <div className="cyber-panel p-4">
@@ -2332,6 +2336,7 @@ export default function App() {
             )}
 
             {activeScenario && scenarioForm(activeScenario)}
+            </div>
           </div>
         )
       case "diff":
@@ -2405,8 +2410,8 @@ export default function App() {
           <p className="mt-1 text-xs text-subtle">快速对比不同 Base、薪数、公积金与社保方案</p>
         </div>
 
-        <nav className="mb-6 overflow-x-auto">
-          <div className="flex min-w-max gap-1 rounded-xl border border-accent/10 bg-base-2/80 p-1 backdrop-blur-sm">
+        <nav className="sticky top-11 z-40 mb-6 overflow-x-auto rounded-xl border border-accent/10 bg-base-2/80 p-1 backdrop-blur-sm">
+          <div className="flex min-w-max gap-1">
             {tabs.map((t) => (
               <button
                 key={t.key}
