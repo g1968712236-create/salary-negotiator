@@ -1532,20 +1532,36 @@ function ExportReport({
   const handleExport = useCallback(async () => {
     if (!exportRef.current) return
     setExporting(true)
+    let clone: HTMLElement | null = null
     try {
-      const dataUrl = await toPng(exportRef.current, {
+      // 克隆到 body 并置为可见，避免 off-screen 元素在某些浏览器里无法被 html-to-image 捕获
+      clone = exportRef.current.cloneNode(true) as HTMLElement
+      clone.style.position = "fixed"
+      clone.style.left = "0"
+      clone.style.top = "0"
+      clone.style.opacity = "1"
+      clone.style.zIndex = "-1"
+      clone.style.pointerEvents = "none"
+      document.body.appendChild(clone)
+
+      const dataUrl = await toPng(clone, {
         cacheBust: true,
         pixelRatio: 2,
         backgroundColor: "#050510",
       })
+
       const link = document.createElement("a")
       link.download = `offer对比_${new Date().toISOString().slice(0, 10)}.png`
       link.href = dataUrl
       link.click()
     } catch (err) {
       console.error("Export failed:", err)
-      alert("导出失败，请重试")
+      const message = err instanceof Error ? err.message : String(err)
+      alert(`导出失败：${message}`)
     } finally {
+      if (clone && clone.parentNode) {
+        document.body.removeChild(clone)
+      }
       setExporting(false)
     }
   }, [])
@@ -1652,7 +1668,7 @@ function ExportReport({
             <p>{SITE_URL}</p>
             <p className="mt-1 text-[10px]">数据仅供参考，具体以劳动合同和当地政策为准</p>
           </div>
-          <img src="/qr-code.png" alt="二维码" className="h-20 w-20" />
+          <img src="/qr-code.png" alt="二维码" crossOrigin="anonymous" className="h-20 w-20" />
         </div>
       </div>
     </div>
