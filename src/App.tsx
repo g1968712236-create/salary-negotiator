@@ -16,7 +16,6 @@ import {
   CartesianGrid,
   ComposedChart,
   Legend,
-  Line,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -1086,7 +1085,6 @@ const CHART_COLORS = {
   current: "#00f0ff",
   expected: "#b829dd",
   offer: ["#ffcc00", "#ff00a0", "#00ff88", "#b829dd", "#ff3366"],
-  growth: "#00ff88",
 }
 
 function formatWan(n: number) {
@@ -1197,24 +1195,14 @@ function SalaryChart({
               tickLine={{ stroke: "rgba(0,240,255,0.1)" }}
             />
             <YAxis
-              yAxisId="left"
               tick={{ fill: "#8899aa", fontSize: 10 }}
               axisLine={{ stroke: "rgba(0,240,255,0.15)" }}
               tickLine={{ stroke: "rgba(0,240,255,0.1)" }}
               tickFormatter={(v) => formatWan(Number(v))}
             />
-            <YAxis
-              yAxisId="right"
-              orientation="right"
-              tick={{ fill: "#8899aa", fontSize: 10 }}
-              axisLine={{ stroke: "rgba(0,255,136,0.2)" }}
-              tickLine={{ stroke: "rgba(0,255,136,0.1)" }}
-              tickFormatter={(v) => `${v}%`}
-            />
             <Tooltip content={<CustomTooltip />} />
             <Legend wrapperStyle={{ fontSize: 11, color: "#8899aa" }} iconType="circle" />
             <Bar
-              yAxisId="left"
               dataKey={currentScenario?.name ?? "当前岗位"}
               fill={CHART_COLORS.current}
               radius={[4, 4, 0, 0]}
@@ -1223,23 +1211,10 @@ function SalaryChart({
             {scenarioSummaries.map((s, idx) => (
               <Bar
                 key={s.id}
-                yAxisId="left"
                 dataKey={s.name}
                 fill={CHART_COLORS.offer[idx % CHART_COLORS.offer.length]}
                 radius={[4, 4, 0, 0]}
                 maxBarSize={20}
-              />
-            ))}
-            {scenarioSummaries.map((s, idx) => (
-              <Line
-                key={s.id}
-                yAxisId="right"
-                type="monotone"
-                dataKey={`${s.name}涨幅`}
-                stroke={CHART_COLORS.offer[idx % CHART_COLORS.offer.length]}
-                strokeWidth={2}
-                dot={{ r: 2, strokeWidth: 0 }}
-                activeDot={{ r: 4 }}
               />
             ))}
           </ComposedChart>
@@ -1249,10 +1224,6 @@ function SalaryChart({
         <span className="flex items-center gap-1">
           <span className="h-2 w-2 rounded-full" style={{ background: CHART_COLORS.current }} />
           柱状图 = 金额
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="h-2 w-2 rounded-full" style={{ background: CHART_COLORS.growth }} />
-          折线图 = 相对当前涨幅
         </span>
       </div>
     </div>
