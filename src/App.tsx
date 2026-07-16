@@ -1556,7 +1556,14 @@ function ExportReport({
       link.click()
     } catch (err) {
       console.error("Export failed:", err)
-      const message = err instanceof Error ? err.message : String(err)
+      let message = "未知错误"
+      if (err instanceof Error) {
+        message = err.message
+      } else if (err && typeof err === "object" && "type" in err) {
+        message = `资源加载失败（${(err as Event).type}），请检查网络或二维码图片路径`
+      } else {
+        message = String(err)
+      }
       alert(`导出失败：${message}`)
     } finally {
       if (clone && clone.parentNode) {
@@ -1668,7 +1675,7 @@ function ExportReport({
             <p>{SITE_URL}</p>
             <p className="mt-1 text-[10px]">数据仅供参考，具体以劳动合同和当地政策为准</p>
           </div>
-          <img src="/qr-code.png" alt="二维码" crossOrigin="anonymous" className="h-20 w-20" />
+          <img src="./qr-code.png" alt="二维码" className="h-20 w-20" />
         </div>
       </div>
     </div>
