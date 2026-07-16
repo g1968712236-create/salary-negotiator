@@ -2252,36 +2252,43 @@ export default function App() {
                 </button>
               </div>
               <div className="flex flex-wrap gap-2">
-                {scenarios.map((s) => (
-                  <div
-                    key={s.id}
-                    onClick={() => setActiveScenarioId(s.id)}
-                    className={cn(
-                      "flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-xs transition-all",
-                      activeScenarioId === s.id
-                        ? "border-accent/30 bg-accent/10 text-accent"
-                        : "border-white/[0.05] bg-black/20 text-dim hover:border-accent/15"
-                    )}
-                  >
-                    <input
-                      value={s.name}
-                      onChange={(e) => renameScenario(s.id, e.target.value)}
-                      className="w-20 bg-transparent text-xs outline-none"
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                    {s.role === "offer" && scenarios.filter((x) => x.role === "offer").length > 1 && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          removeScenario(s.id)
-                        }}
-                        className="text-[10px] text-subtle hover:text-danger"
-                      >
-                        删除
-                      </button>
-                    )}
-                  </div>
-                ))}
+                {scenarios.map((s) => {
+                  const canDelete =
+                    s.role === "offer" && scenarios.filter((x) => x.role === "offer").length > 1
+                  return (
+                    <div
+                      key={s.id}
+                      onClick={() => setActiveScenarioId(s.id)}
+                      className={cn(
+                        "group flex cursor-pointer items-center justify-between gap-2 rounded-lg border px-3 py-2 text-xs transition-all",
+                        activeScenarioId === s.id
+                          ? "border-accent/30 bg-accent/10 text-accent"
+                          : "border-white/[0.05] bg-black/20 text-dim hover:border-accent/15"
+                      )}
+                    >
+                      <input
+                        value={s.name}
+                        onChange={(e) => renameScenario(s.id, e.target.value)}
+                        className={cn(
+                          "w-20 bg-transparent text-xs outline-none",
+                          activeScenarioId === s.id ? "text-accent" : "text-dim group-hover:text-foreground"
+                        )}
+                      />
+                      {canDelete && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            removeScenario(s.id)
+                          }}
+                          className="ml-1 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded text-[10px] leading-none text-subtle transition-colors hover:bg-danger/10 hover:text-danger"
+                          title="删除该方案"
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             </div>
 
