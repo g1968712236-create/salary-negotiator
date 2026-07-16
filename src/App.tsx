@@ -29,7 +29,8 @@ const MAX_BASE = 1000000
 const MIN_RATE = 5
 const MAX_RATE = 12
 const MONTHS_RANGE = [12, 13, 14, 15, 16, 17, 18]
-const STORAGE_KEY = "salary-negotiator-v2"
+const STORAGE_KEY = "salary-negotiator-v3"
+const LEGACY_STORAGE_KEY = "salary-negotiator-v2"
 const SITE_URL = "https://g1968712236-create.github.io/salary-negotiator/"
 const BRAND_NAME = "Offer薪资速算器"
 
@@ -64,13 +65,20 @@ interface SavedOffer {
   data: SalaryData
 }
 
+interface Scenario {
+  id: string
+  name: string
+  data: SalaryData
+  role: "current" | "expected" | "offer"
+}
+
 interface TaxBracket {
   limit: number
   rate: number
   deduction: number
 }
 
-type TabKey = "expected" | "offer" | "diff" | "lookup" | "tax"
+type TabKey = "scenario" | "diff" | "lookup" | "tax"
 type BgMode = "flow" | "rain" | "solid"
 type BgColor = "#050510" | "#0a0a1a" | "#111122" | "#1a0a14"
 
@@ -878,33 +886,28 @@ function formatDiffValue(value: number, format?: string) {
 }
 
 function MultiOfferDiffView({
-  current,
-  expected,
-  offers,
+  scenarios,
   annualBrackets,
   bonusBrackets,
 }: {
-  current: SalaryData
-  expected: SalaryData
-  offers: SavedOffer[]
+  scenarios: Scenario[]
   annualBrackets: TaxBracket[]
   bonusBrackets: TaxBracket[]
 }) {
+  const currentScenario = scenarios.find((s) => s.role === "current") || scenarios[0]
+  const compareScenarios = scenarios.filter((s) => s.id !== currentScenario?.id)
+
   const currentSummary = useMemo(
-    () => calcSummary(current, annualBrackets, bonusBrackets),
-    [current, annualBrackets, bonusBrackets]
+    () => calcSummary(currentScenario?.data || defaultCurrent(), annualBrackets, bonusBrackets),
+    [currentScenario, annualBrackets, bonusBrackets]
   )
-  const expectedSummary = useMemo(
-    () => calcSummary(expected, annualBrackets, bonusBrackets),
-    [expected, annualBrackets, bonusBrackets]
-  )
-  const offerSummaries = useMemo(
+  const scenarioSummaries = useMemo(
     () =>
-      offers.map((o) => ({
-        ...o,
-        summary: calcSummary(o.data, annualBrackets, bonusBrackets),
+      compareScenarios.map((s) => ({
+        ...s,
+        summary: calcSummary(s.data, annualBrackets, bonusBrackets),
       })),
-    [offers, annualBrackets, bonusBrackets]
+    [compareScenarios, annualBrackets, bonusBrackets]
   )
 
   const getValue = (row: DiffRow, data: SalaryData, summary: Summary) => {
@@ -933,13 +936,12 @@ function MultiOfferDiffView({
   }
 
   const columns = [
-    { label: "指标", data: current, summary: currentSummary, name: "当前岗位", isBase: true },
-    { label: "期望", data: expected, summary: expectedSummary, name: "期望", isBase: false },
-    ...offerSummaries.map((o) => ({
-      label: o.name,
-      data: o.data,
-      summary: o.summary,
-      name: o.name,
+    { label: currentScenario?.name ?? "当前岗位", data: currentScenario?.data || defaultCurrent(), summary: currentSummary, name: currentScenario?.name ?? "当前岗位", isBase: true },
+    ...scenarioSummaries.map((s) => ({
+      label: s.name,
+      data: s.data,
+      summary: s.summary,
+      name: s.name,
       isBase: false,
     })),
   ]
@@ -967,7 +969,7 @@ function MultiOfferDiffView({
           </thead>
           <tbody>
             {DIFF_ROWS.map((row) => {
-              const baseValue = getValue(row, current, currentSummary)
+              const baseValue = getValue(row, currentScenario?.data || defaultCurrent(), currentSummary)
               return (
                 <tr
                   key={row.label}
@@ -1003,7 +1005,7 @@ function MultiOfferDiffView({
       {/* Mobile cards */}
       <div className="space-y-3 md:hidden">
         {DIFF_ROWS.map((row) => {
-          const baseValue = getValue(row, current, currentSummary)
+          const baseValue = getValue(row, currentScenario?.data || defaultCurrent(), currentSummary)
           return (
             <div
               key={row.label}
@@ -1024,25 +1026,14 @@ function MultiOfferDiffView({
               </div>
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-subtle">当前岗位</span>
+                  <span className="text-subtle truncate max-w-[80px]">{currentScenario?.name ?? "当前岗位"}</span>
                   <span className="text-foreground">{formatDiffValue(baseValue, row.format)}</span>
                 </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-subtle">期望</span>
-                  <div className="text-right">
-                    <span className="text-foreground">
-                      {formatDiffValue(getValue(row, expected, expectedSummary), row.format)}
-                    </span>
-                    <span className={cn("ml-2", stateClass(state(baseValue, getValue(row, expected, expectedSummary))))}>
-                      {relPct(baseValue, getValue(row, expected, expectedSummary))}
-                    </span>
-                  </div>
-                </div>
-                {offerSummaries.map((o) => {
-                  const val = getValue(row, o.data, o.summary)
+                {scenarioSummaries.map((s) => {
+                  const val = getValue(row, s.data, s.summary)
                   return (
-                    <div key={o.id} className="flex items-center justify-between text-xs">
-                      <span className="text-subtle truncate max-w-[80px]">{o.name}</span>
+                    <div key={s.id} className="flex items-center justify-between text-xs">
+                      <span className="text-subtle truncate max-w-[80px]">{s.name}</span>
                       <div className="text-right">
                         <span className="text-foreground">{formatDiffValue(val, row.format)}</span>
                         <span className={cn("ml-2", stateClass(state(baseValue, val)))}>
@@ -1104,53 +1095,46 @@ function formatWan(n: number) {
 }
 
 function SalaryChart({
-  current,
-  expected,
-  offers,
+  scenarios,
   annualBrackets,
   bonusBrackets,
 }: {
-  current: SalaryData
-  expected: SalaryData
-  offers: SavedOffer[]
+  scenarios: Scenario[]
   annualBrackets: TaxBracket[]
   bonusBrackets: TaxBracket[]
 }) {
+  const currentScenario = scenarios.find((s) => s.role === "current") || scenarios[0]
+  const compareScenarios = scenarios.filter((s) => s.id !== currentScenario?.id)
+
   const currentSummary = useMemo(
-    () => calcSummary(current, annualBrackets, bonusBrackets),
-    [current, annualBrackets, bonusBrackets]
+    () => calcSummary(currentScenario?.data || defaultCurrent(), annualBrackets, bonusBrackets),
+    [currentScenario, annualBrackets, bonusBrackets]
   )
-  const expectedSummary = useMemo(
-    () => calcSummary(expected, annualBrackets, bonusBrackets),
-    [expected, annualBrackets, bonusBrackets]
-  )
-  const offerSummaries = useMemo(
+  const scenarioSummaries = useMemo(
     () =>
-      offers.map((o) => ({
-        ...o,
-        summary: calcSummary(o.data, annualBrackets, bonusBrackets),
+      compareScenarios.map((s) => ({
+        ...s,
+        summary: calcSummary(s.data, annualBrackets, bonusBrackets),
       })),
-    [offers, annualBrackets, bonusBrackets]
+    [compareScenarios, annualBrackets, bonusBrackets]
   )
 
   const data = useMemo(() => {
     return CHART_DIMENSIONS.map((dim) => {
       const isBase = dim.key === "monthlyBase"
-      const cur = isBase ? current.monthlyBase : Number(currentSummary[dim.key as keyof Summary])
-      const exp = isBase ? expected.monthlyBase : Number(expectedSummary[dim.key as keyof Summary])
+      const cur = isBase ? (currentScenario?.data.monthlyBase ?? 0) : Number(currentSummary[dim.key as keyof Summary])
       const result: Record<string, string | number> = {
         name: dim.label,
-        当前岗位: cur,
-        期望: exp,
+        [currentScenario?.name ?? "当前岗位"]: cur,
       }
-      offerSummaries.forEach((o) => {
-        const val = isBase ? o.data.monthlyBase : Number(o.summary[dim.key as keyof Summary])
-        result[`${o.name}`] = val
-        result[`${o.name}涨幅`] = cur === 0 ? 0 : Number((((val - cur) / cur) * 100).toFixed(1))
+      scenarioSummaries.forEach((s) => {
+        const val = isBase ? s.data.monthlyBase : Number(s.summary[dim.key as keyof Summary])
+        result[`${s.name}`] = val
+        result[`${s.name}涨幅`] = cur === 0 ? 0 : Number((((val - cur) / cur) * 100).toFixed(1))
       })
       return result
     })
-  }, [currentSummary, expectedSummary, offerSummaries, current, expected])
+  }, [currentSummary, scenarioSummaries, currentScenario])
 
   const CustomTooltip = ({
     active,
@@ -1229,24 +1213,29 @@ function SalaryChart({
             />
             <Tooltip content={<CustomTooltip />} />
             <Legend wrapperStyle={{ fontSize: 11, color: "#8899aa" }} iconType="circle" />
-            <Bar yAxisId="left" dataKey="当前岗位" fill={CHART_COLORS.current} radius={[4, 4, 0, 0]} maxBarSize={20} />
-            <Bar yAxisId="left" dataKey="期望" fill={CHART_COLORS.expected} radius={[4, 4, 0, 0]} maxBarSize={20} />
-            {offerSummaries.map((o, idx) => (
+            <Bar
+              yAxisId="left"
+              dataKey={currentScenario?.name ?? "当前岗位"}
+              fill={CHART_COLORS.current}
+              radius={[4, 4, 0, 0]}
+              maxBarSize={20}
+            />
+            {scenarioSummaries.map((s, idx) => (
               <Bar
-                key={o.id}
+                key={s.id}
                 yAxisId="left"
-                dataKey={o.name}
+                dataKey={s.name}
                 fill={CHART_COLORS.offer[idx % CHART_COLORS.offer.length]}
                 radius={[4, 4, 0, 0]}
                 maxBarSize={20}
               />
             ))}
-            {offerSummaries.map((o, idx) => (
+            {scenarioSummaries.map((s, idx) => (
               <Line
-                key={o.id}
+                key={s.id}
                 yAxisId="right"
                 type="monotone"
-                dataKey={`${o.name}涨幅`}
+                dataKey={`${s.name}涨幅`}
                 stroke={CHART_COLORS.offer[idx % CHART_COLORS.offer.length]}
                 strokeWidth={2}
                 dot={{ r: 2, strokeWidth: 0 }}
@@ -1529,15 +1518,11 @@ function TaxBracketsTab({
 
 /* ===================== ExportReport ===================== */
 function ExportReport({
-  current,
-  expected,
-  offers,
+  scenarios,
   annualBrackets,
   bonusBrackets,
 }: {
-  current: SalaryData
-  expected: SalaryData
-  offers: SavedOffer[]
+  scenarios: Scenario[]
   annualBrackets: TaxBracket[]
   bonusBrackets: TaxBracket[]
 }) {
@@ -1565,11 +1550,13 @@ function ExportReport({
     }
   }, [])
 
-  const currentSummary = calcSummary(current, annualBrackets, bonusBrackets)
-  const expectedSummary = calcSummary(expected, annualBrackets, bonusBrackets)
-  const offerSummaries = offers.map((o) => ({
-    ...o,
-    summary: calcSummary(o.data, annualBrackets, bonusBrackets),
+  const currentScenario = scenarios.find((s) => s.role === "current") || scenarios[0]
+  const compareScenarios = scenarios.filter((s) => s.id !== currentScenario?.id)
+
+  const currentSummary = calcSummary(currentScenario?.data || defaultCurrent(), annualBrackets, bonusBrackets)
+  const scenarioSummaries = compareScenarios.map((s) => ({
+    ...s,
+    summary: calcSummary(s.data, annualBrackets, bonusBrackets),
   }))
 
   const exportRows = [
@@ -1619,16 +1606,15 @@ function ExportReport({
             <thead>
               <tr className="border-b border-accent/10 text-subtle">
                 <th className="py-2 text-left">指标</th>
-                <th className="px-2 py-2 text-center">当前岗位</th>
-                <th className="px-2 py-2 text-center">期望</th>
-                {offerSummaries.map((o) => (
-                  <th key={o.id} className="px-2 py-2 text-center">{o.name}</th>
+                <th className="px-2 py-2 text-center">{currentScenario?.name ?? "当前岗位"}</th>
+                {scenarioSummaries.map((s) => (
+                  <th key={s.id} className="px-2 py-2 text-center">{s.name}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {exportRows.map((row) => {
-                const baseValue = getValue(row, current, currentSummary)
+                const baseValue = getValue(row, currentScenario?.data || defaultCurrent(), currentSummary)
                 return (
                   <tr key={row.label} className="border-b border-white/[0.03]">
                     <td className="py-2 text-dim">{row.label}</td>
@@ -1639,19 +1625,10 @@ function ExportReport({
                           ? `${baseValue}薪`
                           : baseValue.toLocaleString()}
                     </td>
-                    <td className="px-2 py-2 text-center text-foreground">
-                      {row.format === "money"
-                        ? formatMoney(getValue(row, expected, expectedSummary))
-                        : row.format === "month"
-                          ? `${getValue(row, expected, expectedSummary)}薪`
-                          : getValue(row, expected, expectedSummary).toLocaleString()}
-                      <br />
-                      <span className="text-[10px] text-subtle">{relPct(baseValue, getValue(row, expected, expectedSummary))}</span>
-                    </td>
-                    {offerSummaries.map((o) => {
-                      const val = getValue(row, o.data, o.summary)
+                    {scenarioSummaries.map((s) => {
+                      const val = getValue(row, s.data, s.summary)
                       return (
-                        <td key={o.id} className="px-2 py-2 text-center text-foreground">
+                        <td key={s.id} className="px-2 py-2 text-center text-foreground">
                           {row.format === "money"
                             ? formatMoney(val)
                             : row.format === "month"
@@ -1988,12 +1965,12 @@ function defaultExpected(): SalaryData {
   return createSalaryData(30000, 14, 0, 12, 12, 0, 0)
 }
 
-function defaultOffer(): SavedOffer {
-  return {
-    id: uid(),
-    name: "Offer 1",
-    data: createSalaryData(35000, 15, 0, 12, 12, 0, 0),
-  }
+function defaultScenarios(): Scenario[] {
+  return [
+    { id: uid(), name: "当前岗位", role: "current", data: defaultCurrent() },
+    { id: uid(), name: "期望", role: "expected", data: defaultExpected() },
+    { id: uid(), name: "Offer 1", role: "offer", data: createSalaryData(35000, 15, 0, 12, 12, 0, 0) },
+  ]
 }
 
 const replacer = (_key: string, value: unknown) => {
@@ -2007,15 +1984,13 @@ const reviver = (_key: string, value: unknown) => {
 }
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<TabKey>("expected")
+  const [activeTab, setActiveTab] = useState<TabKey>("scenario")
   const [bgMode, setBgMode] = useState<BgMode>("flow")
   const [bgColor, setBgColor] = useState<BgColor>("#050510")
 
-  const [current, setCurrent] = useState<SalaryData>(defaultCurrent())
-  const [expected, setExpected] = useState<SalaryData>(defaultExpected())
+  const [scenarios, setScenarios] = useState<Scenario[]>(defaultScenarios())
+  const [activeScenarioId, setActiveScenarioId] = useState<string>("")
   const [increasePercent, setIncreasePercent] = useState(20)
-  const [offers, setOffers] = useState<SavedOffer[]>([defaultOffer()])
-  const [activeOfferId, setActiveOfferId] = useState<string>(defaultOffer().id)
 
   const [annualBrackets, setAnnualBrackets] = useState<TaxBracket[]>(DEFAULT_ANNUAL_TAX_BRACKETS)
   const [bonusBrackets, setBonusBrackets] = useState<TaxBracket[]>(DEFAULT_BONUS_TAX_BRACKETS)
@@ -2028,17 +2003,35 @@ export default function App() {
       const saved = localStorage.getItem(STORAGE_KEY)
       if (saved) {
         const parsed = JSON.parse(saved, reviver)
-        if (parsed.current) setCurrent(parsed.current)
-        if (parsed.expected) setExpected(parsed.expected)
-        if (typeof parsed.increasePercent === "number") setIncreasePercent(parsed.increasePercent)
-        if (Array.isArray(parsed.offers) && parsed.offers.length > 0) {
-          setOffers(parsed.offers)
-          setActiveOfferId(parsed.activeOfferId || parsed.offers[0].id)
+        if (Array.isArray(parsed.scenarios) && parsed.scenarios.length > 0) {
+          setScenarios(parsed.scenarios)
+          setActiveScenarioId(parsed.activeScenarioId || parsed.scenarios[0].id)
         }
+        if (typeof parsed.increasePercent === "number") setIncreasePercent(parsed.increasePercent)
         if (parsed.annualBrackets) setAnnualBrackets(parsed.annualBrackets)
         if (parsed.bonusBrackets) setBonusBrackets(parsed.bonusBrackets)
         if (parsed.bgMode) setBgMode(parsed.bgMode)
         if (parsed.bgColor) setBgColor(parsed.bgColor)
+      } else {
+        /* 迁移旧版数据 */
+        const legacy = localStorage.getItem(LEGACY_STORAGE_KEY)
+        if (legacy) {
+          const parsedLegacy = JSON.parse(legacy, reviver)
+          const migrated: Scenario[] = [
+            { id: uid(), name: "当前岗位", role: "current", data: parsedLegacy.current || defaultCurrent() },
+            { id: uid(), name: "期望", role: "expected", data: parsedLegacy.expected || defaultExpected() },
+            ...(parsedLegacy.offers || []).map((o: SavedOffer) => ({ ...o, role: "offer" as const })),
+          ].filter((s) => s.data)
+          if (migrated.length > 0) {
+            setScenarios(migrated)
+            setActiveScenarioId(migrated[0].id)
+            if (typeof parsedLegacy.increasePercent === "number") setIncreasePercent(parsedLegacy.increasePercent)
+            if (parsedLegacy.annualBrackets) setAnnualBrackets(parsedLegacy.annualBrackets)
+            if (parsedLegacy.bonusBrackets) setBonusBrackets(parsedLegacy.bonusBrackets)
+            if (parsedLegacy.bgMode) setBgMode(parsedLegacy.bgMode)
+            if (parsedLegacy.bgColor) setBgColor(parsedLegacy.bgColor)
+          }
+        }
       }
     } catch {
       // ignore
@@ -2050,18 +2043,16 @@ export default function App() {
   useEffect(() => {
     if (!loaded) return
     const data = {
-      current,
-      expected,
+      scenarios,
+      activeScenarioId,
       increasePercent,
-      offers,
-      activeOfferId,
       annualBrackets,
       bonusBrackets,
       bgMode,
       bgColor,
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data, replacer))
-  }, [current, expected, increasePercent, offers, activeOfferId, annualBrackets, bonusBrackets, bgMode, bgColor, loaded])
+  }, [scenarios, activeScenarioId, increasePercent, annualBrackets, bonusBrackets, bgMode, bgColor, loaded])
 
   /* 背景偏好单独保存（兼容旧逻辑） */
   useEffect(() => {
@@ -2076,361 +2067,281 @@ export default function App() {
   }, [bgMode, bgColor])
 
   /* 派生数据 */
-  const currentData = useMemo(() => current, [current])
+  const currentScenario = useMemo(
+    () => scenarios.find((s) => s.role === "current") || scenarios[0],
+    [scenarios]
+  )
+  const expectedScenario = useMemo(
+    () => scenarios.find((s) => s.role === "expected"),
+    [scenarios]
+  )
+  const activeScenario = useMemo(
+    () => scenarios.find((s) => s.id === activeScenarioId) || scenarios[0],
+    [scenarios, activeScenarioId]
+  )
+
   const currentSummary = useMemo(
-    () => calcSummary(currentData, annualBrackets, bonusBrackets),
-    [currentData, annualBrackets, bonusBrackets]
+    () => calcSummary(currentScenario?.data || defaultCurrent(), annualBrackets, bonusBrackets),
+    [currentScenario, annualBrackets, bonusBrackets]
   )
 
   const expectedAnnualPackage = useMemo(() => {
     return Math.round(currentSummary.annualTotalPackage * (1 + increasePercent / 100))
   }, [currentSummary.annualTotalPackage, increasePercent])
 
-  /* 当在职待遇或涨幅变化时，反推期望月Base */
+  const updateScenario = useCallback(
+    (id: string, updater: (data: SalaryData) => SalaryData) => {
+      setScenarios((prev) => prev.map((s) => (s.id === id ? { ...s, data: updater(s.data) } : s)))
+    },
+    []
+  )
+
+  /* 当当前岗位或涨幅变化时，反推期望月Base */
   useEffect(() => {
+    if (!expectedScenario) return
+    const expected = expectedScenario.data
     const equityNum = expected.equity === "" ? 0 : Number(expected.equity)
     const signingNum = expected.signingBonus === "" ? 0 : Number(expected.signingBonus)
     const base =
       expected.months > 0
         ? Math.round((expectedAnnualPackage - equityNum - signingNum) / expected.months)
         : 0
-    setExpected((prev) => ({ ...prev, monthlyBase: clamp(base, MIN_BASE, MAX_BASE) }))
-  }, [expectedAnnualPackage, expected.months, expected.equity, expected.signingBonus])
+    const clamped = clamp(base, MIN_BASE, MAX_BASE)
+    if (clamped !== expected.monthlyBase) {
+      updateScenario(expectedScenario.id, (d) => ({ ...d, monthlyBase: clamped }))
+    }
+  }, [expectedAnnualPackage, expectedScenario, updateScenario])
 
-  const activeOffer = useMemo(
-    () => offers.find((o) => o.id === activeOfferId) || offers[0] || defaultOffer(),
-    [offers, activeOfferId]
-  )
-
-  const updateActiveOffer = useCallback(
-    (updater: (data: SalaryData) => SalaryData) => {
-      setOffers((prev) =>
-        prev.map((o) => (o.id === activeOfferId ? { ...o, data: updater(o.data) } : o))
-      )
-    },
-    [activeOfferId]
-  )
-
-  const addOffer = () => {
-    const newOffer: SavedOffer = {
+  const addScenario = () => {
+    const offerCount = scenarios.filter((s) => s.role === "offer").length
+    const newScenario: Scenario = {
       id: uid(),
-      name: `Offer ${offers.length + 1}`,
+      name: `Offer ${offerCount + 1}`,
+      role: "offer",
       data: createSalaryData(35000, 15, 0, 12, 12, 0, 0),
     }
-    setOffers((prev) => [...prev, newOffer])
-    setActiveOfferId(newOffer.id)
+    setScenarios((prev) => [...prev, newScenario])
+    setActiveScenarioId(newScenario.id)
   }
 
-  const removeOffer = (id: string) => {
-    setOffers((prev) => {
-      const next = prev.filter((o) => o.id !== id)
-      if (activeOfferId === id && next.length > 0) {
-        setActiveOfferId(next[0].id)
+  const removeScenario = (id: string) => {
+    const scenario = scenarios.find((s) => s.id === id)
+    if (!scenario || scenario.role !== "offer") return
+    setScenarios((prev) => {
+      const next = prev.filter((s) => s.id !== id)
+      if (activeScenarioId === id && next.length > 0) {
+        setActiveScenarioId(next[0].id)
       }
       return next
     })
   }
 
-  const renameOffer = (id: string, name: string) => {
-    setOffers((prev) => prev.map((o) => (o.id === id ? { ...o, name } : o)))
+  const renameScenario = (id: string, name: string) => {
+    setScenarios((prev) => prev.map((s) => (s.id === id ? { ...s, name } : s)))
   }
 
   const tabs: { key: TabKey; label: string }[] = [
-    { key: "expected", label: "期望方案" },
-    { key: "offer", label: "新offer待遇" },
+    { key: "scenario", label: "方案管理" },
     { key: "diff", label: "待遇综合对比" },
     { key: "lookup", label: "年包速查" },
     { key: "tax", label: "税率表" },
   ]
 
   const tabContent = () => {
+    const scenarioForm = (scenario: Scenario) => {
+      const data = scenario.data
+      const setData = (updater: (data: SalaryData) => SalaryData) => updateScenario(scenario.id, updater)
+
+      const handleMonthlyBaseChange = (v: number) => {
+        setData((prev) => {
+          const next: SalaryData = { ...prev, monthlyBase: v }
+          if (
+            next.socialInsurance.enabled &&
+            next.socialInsurance.city &&
+            !next.socialInsurance.baseManuallySet
+          ) {
+            const presetKey = Object.keys(CITY_PRESETS).find(
+              (k) => CITY_PRESETS[k].name === next.socialInsurance.city
+            )
+            if (presetKey) {
+              const preset = CITY_PRESETS[presetKey]
+              next.socialInsurance = {
+                ...next.socialInsurance,
+                base: clamp(v, preset.minBase, preset.maxBase),
+              }
+            }
+          }
+          return next
+        })
+        if (scenario.role === "expected" && currentSummary.annualTotalPackage > 0) {
+          const newAnnual =
+            v * data.months + Number(data.equity || 0) + Number(data.signingBonus || 0)
+          const pct = ((newAnnual / currentSummary.annualTotalPackage) - 1) * 100
+          setIncreasePercent(pct)
+        }
+      }
+
+      return (
+        <div className="cyber-panel space-y-4 p-4">
+          <h3 className="text-xs font-medium text-accent">{scenario.name} 待遇汇总</h3>
+          <BaseInputSlider
+            value={data.monthlyBase}
+            onChange={handleMonthlyBaseChange}
+            label="月Base（元/月）"
+          />
+          <MonthsSelector
+            value={data.months}
+            onChange={(v) => setData((prev) => ({ ...prev, months: v }))}
+          />
+          <ProvidentBaseInput
+            value={data.providentBase}
+            onChange={(v) => setData((prev) => ({ ...prev, providentBase: v }))}
+            placeholder={String(data.monthlyBase)}
+          />
+          <RateSlider
+            value={data.personalRate}
+            onChange={(v) => setData((prev) => ({ ...prev, personalRate: v }))}
+            label="个人缴纳比例"
+          />
+          <RateSlider
+            value={data.companyRate}
+            onChange={(v) => setData((prev) => ({ ...prev, companyRate: v }))}
+            label="公司缴纳比例"
+          />
+          <SocialInsuranceEditor
+            value={data.socialInsurance}
+            onChange={(v) => setData((prev) => ({ ...prev, socialInsurance: v }))}
+            defaultBase={data.monthlyBase}
+          />
+          <DeductionInput
+            value={data.deduction}
+            onChange={(v) => setData((prev) => ({ ...prev, deduction: v }))}
+          />
+          <ExpenseInput
+            value={data.monthlyExpense}
+            onChange={(v) => setData((prev) => ({ ...prev, monthlyExpense: v }))}
+          />
+          <ExtraModules
+            equity={data.equity}
+            onEquityChange={(v) => setData((prev) => ({ ...prev, equity: v }))}
+            signingBonus={data.signingBonus}
+            onSigningBonusChange={(v) => setData((prev) => ({ ...prev, signingBonus: v }))}
+          />
+          <SalarySummary
+            data={data}
+            label={`${scenario.name} 年包汇总`}
+            annualBrackets={annualBrackets}
+            bonusBrackets={bonusBrackets}
+          />
+        </div>
+      )
+    }
+
     switch (activeTab) {
-      case "expected":
-        return (
-          <div className="animate-in space-y-4">
-            <div className="cyber-panel p-4">
-              <div className="mb-3 text-xs text-dim">期望年包涨幅</div>
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-sm text-foreground">
-                  当前年包 {formatMoney(currentSummary.annualTotalPackage)} → 期望年包{" "}
-                  <span className="text-accent">{formatMoney(expectedAnnualPackage)}</span>
-                </span>
-                <NumericInput
-                  value={increasePercent.toFixed(2)}
-                  onChange={(v) => {
-                    const num = Number(v)
-                    if (v === "" || (num >= 0 && num <= 100)) {
-                      setIncreasePercent(num)
-                    }
-                  }}
-                  onBlur={() => {
-                    const committed = Math.max(0, Math.min(100, increasePercent))
-                    setIncreasePercent(committed)
-                  }}
-                  allowDecimal
-                  className="w-20 text-accent"
-                />
-              </div>
-              <Slider
-                value={[Math.round(increasePercent)]}
-                onValueChange={(v) => setIncreasePercent(v[0])}
-                min={0}
-                max={100}
-                step={1}
-              />
-              <div className="mt-1 flex justify-between text-[10px] text-subtle">
-                <span>0%</span>
-                <span>{increasePercent.toFixed(2)}%</span>
-                <span>100%</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <div className="cyber-panel space-y-4 p-4">
-                <h3 className="text-xs font-medium text-dim">最近在职岗位待遇</h3>
-                <BaseInputSlider
-                  value={current.monthlyBase}
-                  onChange={(v) => setCurrent((prev) => ({ ...prev, monthlyBase: v }))}
-                  label="月Base（元/月）"
-                />
-                <MonthsSelector
-                  value={current.months}
-                  onChange={(v) => setCurrent((prev) => ({ ...prev, months: v }))}
-                />
-                <ProvidentBaseInput
-                  value={current.providentBase}
-                  onChange={(v) => setCurrent((prev) => ({ ...prev, providentBase: v }))}
-                  placeholder={String(current.monthlyBase)}
-                />
-                <RateSlider
-                  value={current.personalRate}
-                  onChange={(v) => setCurrent((prev) => ({ ...prev, personalRate: v }))}
-                  label="个人缴纳比例"
-                />
-                <RateSlider
-                  value={current.companyRate}
-                  onChange={(v) => setCurrent((prev) => ({ ...prev, companyRate: v }))}
-                  label="公司缴纳比例"
-                />
-                <SocialInsuranceEditor
-                  value={current.socialInsurance}
-                  onChange={(v) => setCurrent((prev) => ({ ...prev, socialInsurance: v }))}
-                  defaultBase={current.monthlyBase}
-                />
-                <DeductionInput
-                  value={current.deduction}
-                  onChange={(v) => setCurrent((prev) => ({ ...prev, deduction: v }))}
-                />
-                <ExpenseInput
-                  value={current.monthlyExpense}
-                  onChange={(v) => setCurrent((prev) => ({ ...prev, monthlyExpense: v }))}
-                />
-                <ExtraModules
-                  equity={current.equity}
-                  onEquityChange={(v) => setCurrent((prev) => ({ ...prev, equity: v }))}
-                  signingBonus={current.signingBonus}
-                  onSigningBonusChange={(v) => setCurrent((prev) => ({ ...prev, signingBonus: v }))}
-                />
-                <SalarySummary
-                  data={currentData}
-                  annualBrackets={annualBrackets}
-                  bonusBrackets={bonusBrackets}
-                />
-              </div>
-
-              <div className="cyber-panel space-y-4 p-4">
-                <h3 className="text-xs font-medium text-accent">期望年包</h3>
-                <BaseInputSlider
-                  value={expected.monthlyBase}
-                  onChange={(v) => {
-                    if (currentSummary.annualTotalPackage > 0) {
-                      const newAnnual =
-                        v * expected.months + Number(expected.equity || 0) + Number(expected.signingBonus || 0)
-                      const pct = ((newAnnual / currentSummary.annualTotalPackage) - 1) * 100
-                      setIncreasePercent(pct)
-                    }
-                    setExpected((prev) => ({ ...prev, monthlyBase: v }))
-                  }}
-                  label="期望月Base（元/月）"
-                />
-                <MonthsSelector
-                  value={expected.months}
-                  onChange={(v) => setExpected((prev) => ({ ...prev, months: v }))}
-                />
-                <ProvidentBaseInput
-                  value={expected.providentBase}
-                  onChange={(v) => setExpected((prev) => ({ ...prev, providentBase: v }))}
-                  placeholder={String(expected.monthlyBase)}
-                />
-                <RateSlider
-                  value={expected.personalRate}
-                  onChange={(v) => setExpected((prev) => ({ ...prev, personalRate: v }))}
-                  label="个人缴纳比例"
-                />
-                <RateSlider
-                  value={expected.companyRate}
-                  onChange={(v) => setExpected((prev) => ({ ...prev, companyRate: v }))}
-                  label="公司缴纳比例"
-                />
-                <SocialInsuranceEditor
-                  value={expected.socialInsurance}
-                  onChange={(v) => setExpected((prev) => ({ ...prev, socialInsurance: v }))}
-                  defaultBase={expected.monthlyBase}
-                />
-                <DeductionInput
-                  value={expected.deduction}
-                  onChange={(v) => setExpected((prev) => ({ ...prev, deduction: v }))}
-                />
-                <ExpenseInput
-                  value={expected.monthlyExpense}
-                  onChange={(v) => setExpected((prev) => ({ ...prev, monthlyExpense: v }))}
-                />
-                <ExtraModules
-                  equity={expected.equity}
-                  onEquityChange={(v) => setExpected((prev) => ({ ...prev, equity: v }))}
-                  signingBonus={expected.signingBonus}
-                  onSigningBonusChange={(v) => setExpected((prev) => ({ ...prev, signingBonus: v }))}
-                />
-                <SalarySummary
-                  data={expected}
-                  label="期望年包汇总"
-                  annualBrackets={annualBrackets}
-                  bonusBrackets={bonusBrackets}
-                />
-              </div>
-            </div>
-          </div>
-        )
-      case "offer":
+      case "scenario":
         return (
           <div className="animate-in space-y-4">
             <div className="cyber-panel space-y-3 p-4">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-accent">Offer 列表</span>
+                <span className="text-xs font-medium text-accent">方案列表</span>
                 <button
-                  onClick={addOffer}
+                  onClick={addScenario}
                   className="rounded-md border border-accent/20 px-3 py-1.5 text-xs text-accent transition-colors hover:bg-accent/10"
                 >
                   + 新增 Offer
                 </button>
               </div>
-              {offers.length === 0 ? (
-                <div className="text-xs text-subtle">暂无 Offer，点击上方按钮添加</div>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {offers.map((o) => (
-                    <div
-                      key={o.id}
-                      className={cn(
-                        "flex items-center gap-2 rounded-lg border px-3 py-2 text-xs transition-all",
-                        activeOfferId === o.id
-                          ? "border-accent/30 bg-accent/10 text-accent"
-                          : "border-white/[0.05] bg-black/20 text-dim hover:border-accent/15"
-                      )}
-                    >
-                      <input
-                        value={o.name}
-                        onChange={(e) => renameOffer(o.id, e.target.value)}
-                        className="w-20 bg-transparent text-xs outline-none"
-                        onClick={(e) => e.stopPropagation()}
-                      />
+              <div className="flex flex-wrap gap-2">
+                {scenarios.map((s) => (
+                  <div
+                    key={s.id}
+                    onClick={() => setActiveScenarioId(s.id)}
+                    className={cn(
+                      "flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-xs transition-all",
+                      activeScenarioId === s.id
+                        ? "border-accent/30 bg-accent/10 text-accent"
+                        : "border-white/[0.05] bg-black/20 text-dim hover:border-accent/15"
+                    )}
+                  >
+                    <input
+                      value={s.name}
+                      onChange={(e) => renameScenario(s.id, e.target.value)}
+                      className="w-20 bg-transparent text-xs outline-none"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    {s.role === "offer" && scenarios.filter((x) => x.role === "offer").length > 1 && (
                       <button
-                        onClick={() => setActiveOfferId(o.id)}
-                        className="text-[10px] text-subtle hover:text-foreground"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          removeScenario(s.id)
+                        }}
+                        className="text-[10px] text-subtle hover:text-danger"
                       >
-                        编辑
+                        删除
                       </button>
-                      {offers.length > 1 && (
-                        <button
-                          onClick={() => removeOffer(o.id)}
-                          className="text-[10px] text-subtle hover:text-danger"
-                        >
-                          删除
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
 
-            {activeOffer && (
-              <div className="cyber-panel space-y-4 p-4">
-                <h3 className="text-xs font-medium text-accent">{activeOffer.name} 待遇汇总</h3>
-                <BaseInputSlider
-                  value={activeOffer.data.monthlyBase}
-                  onChange={(v) => updateActiveOffer((d) => ({ ...d, monthlyBase: v }))}
-                  label="月Base（元/月）"
+            {activeScenario?.role === "expected" && (
+              <div className="cyber-panel p-4">
+                <div className="mb-3 text-xs text-dim">期望年包涨幅</div>
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-sm text-foreground">
+                    当前年包 {formatMoney(currentSummary.annualTotalPackage)} → 期望年包{" "}
+                    <span className="text-accent">{formatMoney(expectedAnnualPackage)}</span>
+                  </span>
+                  <NumericInput
+                    value={increasePercent.toFixed(2)}
+                    onChange={(v) => {
+                      const num = Number(v)
+                      if (v === "" || (num >= 0 && num <= 100)) {
+                        setIncreasePercent(num)
+                      }
+                    }}
+                    onBlur={() => {
+                      const committed = Math.max(0, Math.min(100, increasePercent))
+                      setIncreasePercent(committed)
+                    }}
+                    allowDecimal
+                    className="w-20 text-accent"
+                  />
+                </div>
+                <Slider
+                  value={[Math.round(increasePercent)]}
+                  onValueChange={(v) => setIncreasePercent(v[0])}
+                  min={0}
+                  max={100}
+                  step={1}
                 />
-                <MonthsSelector
-                  value={activeOffer.data.months}
-                  onChange={(v) => updateActiveOffer((d) => ({ ...d, months: v }))}
-                />
-                <ProvidentBaseInput
-                  value={activeOffer.data.providentBase}
-                  onChange={(v) => updateActiveOffer((d) => ({ ...d, providentBase: v }))}
-                  placeholder={String(activeOffer.data.monthlyBase)}
-                />
-                <RateSlider
-                  value={activeOffer.data.personalRate}
-                  onChange={(v) => updateActiveOffer((d) => ({ ...d, personalRate: v }))}
-                  label="个人缴纳比例"
-                />
-                <RateSlider
-                  value={activeOffer.data.companyRate}
-                  onChange={(v) => updateActiveOffer((d) => ({ ...d, companyRate: v }))}
-                  label="公司缴纳比例"
-                />
-                <SocialInsuranceEditor
-                  value={activeOffer.data.socialInsurance}
-                  onChange={(v) => updateActiveOffer((d) => ({ ...d, socialInsurance: v }))}
-                  defaultBase={activeOffer.data.monthlyBase}
-                />
-                <DeductionInput
-                  value={activeOffer.data.deduction}
-                  onChange={(v) => updateActiveOffer((d) => ({ ...d, deduction: v }))}
-                />
-                <ExpenseInput
-                  value={activeOffer.data.monthlyExpense}
-                  onChange={(v) => updateActiveOffer((d) => ({ ...d, monthlyExpense: v }))}
-                />
-                <ExtraModules
-                  equity={activeOffer.data.equity}
-                  onEquityChange={(v) => updateActiveOffer((d) => ({ ...d, equity: v }))}
-                  signingBonus={activeOffer.data.signingBonus}
-                  onSigningBonusChange={(v) => updateActiveOffer((d) => ({ ...d, signingBonus: v }))}
-                />
-                <SalarySummary
-                  data={activeOffer.data}
-                  label={`${activeOffer.name} 年包汇总`}
-                  annualBrackets={annualBrackets}
-                  bonusBrackets={bonusBrackets}
-                />
+                <div className="mt-1 flex justify-between text-[10px] text-subtle">
+                  <span>0%</span>
+                  <span>{increasePercent.toFixed(2)}%</span>
+                  <span>100%</span>
+                </div>
               </div>
             )}
+
+            {activeScenario && scenarioForm(activeScenario)}
           </div>
         )
       case "diff":
         return (
           <div className="animate-in space-y-4">
             <ExportReport
-              current={current}
-              expected={expected}
-              offers={offers}
+              scenarios={scenarios}
               annualBrackets={annualBrackets}
               bonusBrackets={bonusBrackets}
             />
             <SalaryChart
-              current={current}
-              expected={expected}
-              offers={offers}
+              scenarios={scenarios}
               annualBrackets={annualBrackets}
               bonusBrackets={bonusBrackets}
             />
             <MultiOfferDiffView
-              current={current}
-              expected={expected}
-              offers={offers}
+              scenarios={scenarios}
               annualBrackets={annualBrackets}
               bonusBrackets={bonusBrackets}
             />
