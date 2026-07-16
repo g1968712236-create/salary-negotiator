@@ -7,17 +7,18 @@
   <meta name="description" content="Offer薪资速算器，帮助求职者快速计算、对比和决策不同薪资方案。谈薪不拍脑袋，年包一算就懂。">
   <style>
     :root {
-      --bg: #0a0a0f;
-      --bg-elevated: #12121a;
-      --bg-card: rgba(255, 255, 255, 0.03);
-      --primary: #ff7a45;
-      --primary-glow: rgba(255, 122, 69, 0.3);
-      --accent: #ffc400;
-      --text: #f5f5f7;
-      --text-secondary: #a1a1aa;
-      --text-muted: #71717a;
-      --border: rgba(255, 255, 255, 0.08);
-      --success: #34d399;
+      --bg: #050510;
+      --bg-elevated: #0a0a1a;
+      --bg-card: rgba(10, 10, 30, 0.7);
+      --primary: #00f0ff;
+      --primary-glow: rgba(0, 240, 255, 0.3);
+      --accent: #b829dd;
+      --accent-glow: rgba(184, 41, 221, 0.25);
+      --text: #e0e8ff;
+      --text-secondary: #8899aa;
+      --text-muted: #556677;
+      --border: rgba(0, 240, 255, 0.15);
+      --success: #00ff88;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -25,7 +26,7 @@
     html { scroll-behavior: smooth; }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
       background: var(--bg);
       color: var(--text);
       line-height: 1.6;
@@ -65,7 +66,7 @@
       width: 600px;
       height: 600px;
       background: radial-gradient(circle, var(--primary-glow) 0%, transparent 60%);
-      opacity: 0.6;
+      opacity: 0.5;
       animation: float 8s ease-in-out infinite;
     }
 
@@ -75,8 +76,8 @@
       left: -300px;
       width: 700px;
       height: 700px;
-      background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 60%);
-      opacity: 0.5;
+      background: radial-gradient(circle, var(--accent-glow) 0%, transparent 60%);
+      opacity: 0.4;
       animation: float 10s ease-in-out infinite reverse;
     }
 
@@ -86,7 +87,7 @@
       right: 10%;
       width: 500px;
       height: 500px;
-      background: radial-gradient(circle, rgba(255, 196, 0, 0.1) 0%, transparent 60%);
+      background: radial-gradient(circle, rgba(0, 240, 255, 0.08) 0%, transparent 60%);
       opacity: 0.5;
       animation: float 12s ease-in-out infinite;
     }
@@ -94,6 +95,44 @@
     @keyframes float {
       0%, 100% { transform: translateY(0) scale(1); }
       50% { transform: translateY(-30px) scale(1.05); }
+    }
+
+    /* Utilities */
+    .neon-cyan {
+      color: var(--primary);
+      text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+    }
+
+    .cyber-panel {
+      position: relative;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(12px) saturate(120%);
+      overflow: hidden;
+    }
+
+    .cyber-panel::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(0, 240, 255, 0.4), transparent);
+      pointer-events: none;
+    }
+
+    .cyber-panel::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(0, 240, 255, 0.2), transparent);
+      pointer-events: none;
     }
 
     /* Layout */
@@ -112,7 +151,7 @@
       left: 0;
       right: 0;
       z-index: 100;
-      background: rgba(10, 10, 15, 0.8);
+      background: rgba(5, 5, 16, 0.85);
       backdrop-filter: blur(20px);
       border-bottom: 1px solid var(--border);
     }
@@ -143,7 +182,8 @@
       align-items: center;
       justify-content: center;
       font-size: 18px;
-      color: #fff;
+      color: #050510;
+      box-shadow: 0 0 12px rgba(0, 240, 255, 0.25);
     }
 
     .nav-links {
@@ -160,7 +200,7 @@
       transition: color 0.2s;
     }
 
-    .nav-links a:hover { color: var(--text); }
+    .nav-links a:hover { color: var(--primary); }
 
     .btn {
       display: inline-flex;
@@ -168,7 +208,7 @@
       justify-content: center;
       gap: 8px;
       padding: 12px 24px;
-      border-radius: 12px;
+      border-radius: 10px;
       font-size: 15px;
       font-weight: 600;
       text-decoration: none;
@@ -178,28 +218,31 @@
     }
 
     .btn-primary {
-      background: linear-gradient(135deg, var(--primary), #ff9f70);
-      color: #fff;
-      box-shadow: 0 4px 20px var(--primary-glow);
+      background: rgba(0, 240, 255, 0.1);
+      color: var(--primary);
+      border: 1px solid var(--border);
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.08);
     }
 
     .btn-primary:hover {
+      background: rgba(0, 240, 255, 0.18);
+      box-shadow: 0 0 24px rgba(0, 240, 255, 0.18);
       transform: translateY(-2px);
-      box-shadow: 0 8px 30px var(--primary-glow);
     }
 
     .btn-secondary {
       background: transparent;
-      color: var(--text);
-      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      border: 1px solid rgba(255, 255, 255, 0.08);
     }
 
     .btn-secondary:hover {
-      background: rgba(255, 255, 255, 0.05);
-      border-color: rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      border-color: var(--border);
     }
 
-    .btn-large { padding: 16px 32px; font-size: 16px; border-radius: 14px; }
+    .btn-large { padding: 16px 32px; font-size: 16px; border-radius: 12px; }
 
     /* Hero */
     .hero {
@@ -212,8 +255,8 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: rgba(255, 122, 69, 0.1);
-      border: 1px solid rgba(255, 122, 69, 0.2);
+      background: rgba(0, 240, 255, 0.08);
+      border: 1px solid var(--border);
       color: var(--primary);
       padding: 8px 16px;
       border-radius: 30px;
@@ -231,13 +274,13 @@
     }
 
     @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.5); }
-      70% { box-shadow: 0 0 0 8px rgba(52, 211, 153, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+      0% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.4); }
+      70% { box-shadow: 0 0 0 8px rgba(0, 255, 136, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0); }
     }
 
     .hero h1 {
-      font-size: 56px;
+      font-size: 54px;
       font-weight: 800;
       line-height: 1.1;
       margin-bottom: 24px;
@@ -252,7 +295,7 @@
     }
 
     .hero-subtitle {
-      font-size: 20px;
+      font-size: 19px;
       color: var(--text-secondary);
       max-width: 640px;
       margin: 0 auto 40px;
@@ -281,7 +324,8 @@
     .stat-number {
       font-size: 32px;
       font-weight: 800;
-      color: var(--text);
+      color: var(--primary);
+      text-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
     }
 
     .stat-label {
@@ -301,7 +345,7 @@
     }
 
     .section-header h2 {
-      font-size: 38px;
+      font-size: 36px;
       font-weight: 800;
       margin-bottom: 16px;
     }
@@ -320,24 +364,21 @@
     }
 
     .card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 20px;
       padding: 32px;
       transition: all 0.3s;
     }
 
     .card:hover {
       transform: translateY(-4px);
-      border-color: rgba(255, 122, 69, 0.3);
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      border-color: rgba(0, 240, 255, 0.3);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 0 0 24px rgba(0, 240, 255, 0.08);
     }
 
     .card-icon {
       width: 52px;
       height: 52px;
-      background: rgba(255, 122, 69, 0.1);
-      border: 1px solid rgba(255, 122, 69, 0.2);
+      background: rgba(0, 240, 255, 0.08);
+      border: 1px solid var(--border);
       border-radius: 14px;
       display: flex;
       align-items: center;
@@ -345,6 +386,7 @@
       font-size: 24px;
       color: var(--primary);
       margin-bottom: 20px;
+      box-shadow: 0 0 12px rgba(0, 240, 255, 0.08);
     }
 
     .card h3 {
@@ -376,6 +418,16 @@
       background: linear-gradient(90deg, transparent, var(--border), transparent);
     }
 
+    .features::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border), transparent);
+    }
+
     .feature-row {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -383,20 +435,34 @@
     }
 
     .feature-card {
-      background: rgba(255, 255, 255, 0.02);
+      background: rgba(10, 10, 30, 0.5);
       border: 1px solid var(--border);
-      border-radius: 16px;
+      border-radius: 10px;
       padding: 28px;
       transition: all 0.25s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(0, 240, 255, 0.35), transparent);
+      pointer-events: none;
     }
 
     .feature-card:hover {
-      background: rgba(255, 255, 255, 0.04);
-      border-color: rgba(255, 122, 69, 0.25);
+      background: rgba(10, 10, 30, 0.8);
+      border-color: rgba(0, 240, 255, 0.3);
+      box-shadow: 0 0 24px rgba(0, 240, 255, 0.08);
     }
 
     .feature-card .icon {
-      font-size: 28px;
+      font-size: 26px;
       color: var(--primary);
       margin-bottom: 16px;
     }
@@ -442,7 +508,8 @@
       font-size: 22px;
       font-weight: 800;
       margin: 0 auto 20px;
-      color: #fff;
+      color: #050510;
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.25);
     }
 
     .step-card h3 {
@@ -463,10 +530,12 @@
     }
 
     .testimonial-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
       padding: 28px;
+      transition: all 0.25s;
+    }
+
+    .testimonial-card:hover {
+      border-color: rgba(0, 240, 255, 0.25);
     }
 
     .testimonial-card .quote {
@@ -492,7 +561,7 @@
       align-items: center;
       justify-content: center;
       font-weight: 700;
-      color: #fff;
+      color: #050510;
     }
 
     .author-info h4 {
@@ -512,12 +581,13 @@
     }
 
     .cta-box {
-      background: linear-gradient(135deg, rgba(255, 122, 69, 0.1), rgba(255, 196, 0, 0.05));
-      border: 1px solid rgba(255, 122, 69, 0.2);
-      border-radius: 28px;
+      background: linear-gradient(135deg, rgba(0, 240, 255, 0.08), rgba(184, 41, 221, 0.05));
+      border: 1px solid var(--border);
+      border-radius: 24px;
       padding: 64px 32px;
       position: relative;
       overflow: hidden;
+      box-shadow: 0 0 40px rgba(0, 240, 255, 0.06);
     }
 
     .cta-box::before {
@@ -556,6 +626,7 @@
     footer a {
       color: var(--text-secondary);
       text-decoration: none;
+      transition: color 0.2s;
     }
 
     footer a:hover { color: var(--primary); }
@@ -649,6 +720,12 @@
         <rect x="5" y="11" width="14" height="10" rx="2"/>
         <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
       </symbol>
+
+      <symbol id="icon-export" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <path d="M7 10l5 5 5-5"/>
+        <path d="M12 15V3"/>
+      </symbol>
     </defs>
   </svg>
 
@@ -687,15 +764,15 @@
         <span class="pulse"></span>
         纯前端工具 · 数据不上传 · 打开即用
       </div>
-      
+
       <h1>
         谈薪，<span class="gradient-text">算清楚再签字</span>
       </h1>
-      
+
       <p class="hero-subtitle">
-        3 秒对比多家 Offer 待遇，自动反推期望月 Base，年包、税后、公积金差距一眼看清。谈薪不拍脑袋，决策更有底气。
+        统一管理当前岗位、期望与多个 Offer，自动计算税后收入、公积金、社保与年包总额。支持年包速查、税率自定义与 PNG 对比图导出，谈薪决策更有底气。
       </p>
-      
+
       <div class="hero-actions">
         <a href="https://g1968712236-create.github.io/salary-negotiator/" class="btn btn-primary btn-large">
           <span class="icon"><svg><use href="#icon-rocket"/></svg></span>
@@ -706,7 +783,7 @@
           查看开源代码
         </a>
       </div>
-      
+
       <div class="hero-stats">
         <div class="stat-item">
           <div class="stat-number">3s</div>
@@ -727,33 +804,33 @@
   <section class="pain-points" id="pain">
     <div class="container">
       <div class="section-header">
-        <h2>这些谈薪难题，你是不是也遇到过？</h2>
-        <p>HR 报的是年包，到手却差一截；Offer 之间薪数、公积金、补贴各不相同，根本算不清。</p>
+        <h2 class="neon-cyan">这些谈薪难题，你是不是也遇到过？</h2>
+        <p>HR 报的是年包，到手却差一截；Offer 之间薪数、公积金、社保各不相同，根本算不清。</p>
       </div>
-      
+
       <div class="cards-grid">
-        <div class="card">
+        <div class="card cyber-panel">
           <div class="card-icon">
             <span class="icon"><svg><use href="#icon-calculator"/></svg></span>
           </div>
           <h3>数字太多，算不过来</h3>
-          <p>月薪、年终奖、公积金、绩效、补贴、期权……每一项都影响真实收入，手动计算容易漏算。</p>
+          <p>月薪、年终奖、公积金、社保、绩效、补贴、期权……每一项都影响真实收入，手动计算容易漏算。</p>
         </div>
-        
-        <div class="card">
+
+        <div class="card cyber-panel">
           <div class="card-icon">
             <span class="icon"><svg><use href="#icon-chart-bar"/></svg></span>
           </div>
           <h3>怕报高被刷，报低吃亏</h3>
           <p>不知道自己的目标月 Base 该开多少，谈薪时心里没底，要么保守要么激进。</p>
         </div>
-        
-        <div class="card">
+
+        <div class="card cyber-panel">
           <div class="card-icon">
             <span class="icon"><svg><use href="#icon-scale"/></svg></span>
           </div>
           <h3>Offer 一多就纠结</h3>
-          <p>A 公司月薪高但薪数少，B 公司底薪低但补贴多，到底哪个更划算？</p>
+          <p>A 公司月薪高但薪数少，B 公司底薪低但公积金高，到底哪个更划算？</p>
         </div>
       </div>
     </div>
@@ -762,45 +839,45 @@
   <section class="features" id="features">
     <div class="container">
       <div class="section-header">
-        <h2>一个工具，覆盖谈薪全流程</h2>
-        <p>从期望方案反推，到 Offer 横向对比，再到年包速查，每一步都帮你算清楚。</p>
+        <h2 class="neon-cyan">一个工具，覆盖谈薪全流程</h2>
+        <p>从方案管理到 Offer 横向对比，再到年包速查与税率自定义，每一步都帮你算清楚。</p>
       </div>
-      
+
       <div class="feature-row">
         <div class="feature-card">
           <div class="icon"><svg><use href="#icon-target"/></svg></div>
-          <h3>期望方案反推</h3>
-          <p>输入当前待遇和期望涨幅，自动算出目标月 Base，谈薪报价更精准。</p>
+          <h3>方案管理</h3>
+          <p>统一维护当前岗位、期望与多个 Offer 方案，点击切换即可编辑，自动反推期望月 Base。</p>
         </div>
-        
+
         <div class="feature-card">
           <div class="icon"><svg><use href="#icon-document"/></svg></div>
           <h3>Offer 汇总录入</h3>
-          <p>录入月薪、薪数、公积金比例、补贴等，一键计算真实年包。</p>
+          <p>录入月薪、薪数、公积金比例、社保城市、专项扣除等，一键计算真实年包与税后收入。</p>
         </div>
-        
+
         <div class="feature-card">
           <div class="icon"><svg><use href="#icon-scale"/></svg></div>
           <h3>9 项指标对比</h3>
-          <p>期望 vs Offer 逐项 PK，年包、税后、公积金差距一目了然。</p>
+          <p>年包、税后、净收入、公积金、社保等维度横向对比，柱状图直观展示差距。</p>
         </div>
-        
+
         <div class="feature-card">
           <div class="icon"><svg><use href="#icon-table"/></svg></div>
           <h3>年包速查表</h3>
-          <p>月 Base 25K~40K × 12~18 薪完整对照，快速定位自己在哪一档。</p>
+          <p>自定义月 Base 范围，生成 12~18 薪完整对照表，快速定位自己的薪资档位。</p>
         </div>
-        
+
         <div class="feature-card">
-          <div class="icon"><svg><use href="#icon-palette"/></svg></div>
-          <h3>动态背景切换</h3>
-          <p>丝绸流场、雨落寒窗、纯色背景随心换，长时间使用也不累眼。</p>
+          <div class="icon"><svg><use href="#icon-export"/></svg></div>
+          <h3>导出 PNG 对比图</h3>
+          <p>一键生成待遇对比报告图片，方便保存、分享，给家人朋友或 HR 参考都方便。</p>
         </div>
-        
+
         <div class="feature-card">
           <div class="icon"><svg><use href="#icon-lock"/></svg></div>
           <h3>纯前端隐私安全</h3>
-          <p>所有计算在浏览器本地完成，薪资数据不上传服务器，隐私更安心。</p>
+          <p>所有计算在浏览器本地完成，薪资数据仅存于 localStorage，不上传任何服务器。</p>
         </div>
       </div>
     </div>
@@ -809,27 +886,27 @@
   <section class="steps" id="steps">
     <div class="container">
       <div class="section-header">
-        <h2>三步上手</h2>
+        <h2 class="neon-cyan">三步上手</h2>
         <p>无需注册，无需下载 App，打开网页就能用。</p>
       </div>
-      
+
       <div class="steps-grid">
-        <div class="step-card">
+        <div class="step-card cyber-panel">
           <div class="step-number">1</div>
-          <h3>输入当前待遇</h3>
-          <p>填写现有月薪、年终奖、公积金等基础信息。</p>
+          <h3>录入当前待遇</h3>
+          <p>填写现有月薪、年终奖、公积金与社保等基础信息。</p>
         </div>
-        
-        <div class="step-card">
+
+        <div class="step-card cyber-panel">
           <div class="step-number">2</div>
-          <h3>设定期望涨幅</h3>
-          <p>输入期望涨幅，系统自动反推目标月 Base。</p>
+          <h3>新增期望与 Offer</h3>
+          <p>设定期望涨幅自动反推月 Base，或直接录入多个 Offer 方案。</p>
         </div>
-        
-        <div class="step-card">
+
+        <div class="step-card cyber-panel">
           <div class="step-number">3</div>
-          <h3>对比 Offer</h3>
-          <p>录入多个 Offer，一键看清哪家更划算。</p>
+          <h3>对比并导出</h3>
+          <p>在待遇综合对比 Tab 查看差距，一键导出 PNG 报告辅助决策。</p>
         </div>
       </div>
     </div>
@@ -838,12 +915,12 @@
   <section class="testimonials" id="testimonials">
     <div class="container">
       <div class="section-header">
-        <h2>他们怎么说</h2>
+        <h2 class="neon-cyan">他们怎么说</h2>
         <p>来自真实使用者的反馈，谈薪前算一算，真的更有底气。</p>
       </div>
-      
+
       <div class="cards-grid">
-        <div class="testimonial-card">
+        <div class="testimonial-card cyber-panel">
           <p class="quote">"之前谈薪全凭感觉，用了这个工具后才发现两家 Offer 年包差了 4 万多，最后选了更划算的那家。"</p>
           <div class="testimonial-author">
             <div class="author-avatar">李</div>
@@ -853,8 +930,8 @@
             </div>
           </div>
         </div>
-        
-        <div class="testimonial-card">
+
+        <div class="testimonial-card cyber-panel">
           <p class="quote">"界面很清爽，计算逻辑也很清晰。特别是年包速查表，面试前快速看一眼就知道自己的价位。"</p>
           <div class="testimonial-author">
             <div class="author-avatar">王</div>
@@ -864,8 +941,8 @@
             </div>
           </div>
         </div>
-        
-        <div class="testimonial-card">
+
+        <div class="testimonial-card cyber-panel">
           <p class="quote">"数据不上传这点很加分，毕竟薪资信息比较敏感。纯前端工具用得放心。"</p>
           <div class="testimonial-author">
             <div class="author-avatar">陈</div>
@@ -882,7 +959,7 @@
   <section class="cta-section">
     <div class="container">
       <div class="cta-box">
-        <h2>下一次谈薪，心里有数</h2>
+        <h2 class="neon-cyan">下一次谈薪，心里有数</h2>
         <p>免费、免注册、数据不上传。现在就打开工具，算一算你的 Offer 到底值多少。</p>
         <a href="https://g1968712236-create.github.io/salary-negotiator/" class="btn btn-primary btn-large">
           <span class="icon"><svg><use href="#icon-rocket"/></svg></span>

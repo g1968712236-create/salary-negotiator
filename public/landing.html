@@ -4,215 +4,275 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Offer薪资速算器 - 谈薪不拍脑袋</title>
+  <meta name="description" content="纯前端 Offer 薪资对比工具，支持多方案管理、税后收入计算、社保公积金、PNG 导出，数据不上传服务器。">
   <style>
     :root {
-      --primary: #ff7a45;
-      --primary-light: #fff1eb;
-      --accent: #ffc400;
-      --dark: #1a1a1a;
-      --gray: #666;
-      --light-gray: #f8f8f8;
-      --border: #eee;
+      --bg: #050510;
+      --bg-2: #0a0a1a;
+      --bg-3: #111122;
+      --fg: #e0e8ff;
+      --dim: #8899aa;
+      --subtle: #556677;
+      --muted: #334455;
+      --accent: #00f0ff;
+      --accent-glow: rgba(0, 240, 255, 0.35);
+      --accent-secondary: #ff00a0;
+      --accent-tertiary: #b829dd;
+      --success: #00ff88;
+      --danger: #ff3366;
+      --border: rgba(0, 240, 255, 0.15);
     }
-    
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
-      color: var(--dark);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--fg);
       line-height: 1.6;
-      background: #fff;
+      overflow-x: hidden;
     }
-    
+
     .container {
       max-width: 960px;
       margin: 0 auto;
       padding: 0 24px;
     }
-    
-    /* Hero */
-    .hero {
-      background: linear-gradient(135deg, var(--primary-light) 0%, #fff 60%);
-      padding: 80px 0 60px;
-      text-align: center;
-      position: relative;
+
+    /* Background glow */
+    .glow-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
       overflow: hidden;
     }
-    
-    .hero::before {
-      content: "";
+
+    .glow-1 {
       position: absolute;
-      top: -100px;
-      right: -100px;
-      width: 300px;
-      height: 300px;
-      background: radial-gradient(circle, rgba(255, 122, 69, 0.12) 0%, transparent 70%);
+      top: -180px;
+      right: -180px;
+      width: 520px;
+      height: 520px;
+      background: radial-gradient(circle, rgba(0, 240, 255, 0.12) 0%, transparent 65%);
       border-radius: 50%;
     }
-    
+
+    .glow-2 {
+      position: absolute;
+      bottom: -200px;
+      left: -200px;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(184, 41, 221, 0.1) 0%, transparent 65%);
+      border-radius: 50%;
+    }
+
+    /* Utilities */
+    .neon-cyan {
+      color: var(--accent);
+      text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+    }
+
+    .cyber-panel {
+      position: relative;
+      background: rgba(10, 10, 30, 0.7);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(12px) saturate(120%);
+      overflow: hidden;
+    }
+
+    .cyber-panel::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(0, 240, 255, 0.4), transparent);
+      pointer-events: none;
+    }
+
+    .cyber-panel::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(0, 240, 255, 0.2), transparent);
+      pointer-events: none;
+    }
+
+    /* Hero */
+    .hero {
+      padding: 100px 0 70px;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+    }
+
     .hero-badge {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      background: white;
+      gap: 8px;
+      background: rgba(0, 240, 255, 0.08);
       border: 1px solid var(--border);
-      padding: 6px 14px;
-      border-radius: 20px;
+      padding: 8px 16px;
+      border-radius: 30px;
       font-size: 13px;
-      color: var(--gray);
-      margin-bottom: 20px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      color: var(--accent);
+      margin-bottom: 24px;
     }
-    
+
     .hero-badge .dot {
       width: 8px;
       height: 8px;
-      background: #52c41a;
+      background: var(--success);
       border-radius: 50%;
+      box-shadow: 0 0 8px rgba(0, 255, 136, 0.5);
+      animation: pulse 2s infinite;
     }
-    
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.4); }
+      70% { box-shadow: 0 0 0 8px rgba(0, 255, 136, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0); }
+    }
+
     .hero h1 {
-      font-size: 48px;
+      font-size: 46px;
       font-weight: 800;
-      line-height: 1.2;
-      margin-bottom: 16px;
+      line-height: 1.15;
+      margin-bottom: 18px;
+      letter-spacing: -1px;
     }
-    
-    .hero h1 .highlight {
-      color: var(--primary);
-      position: relative;
-    }
-    
-    .hero h1 .highlight::after {
-      content: "";
-      position: absolute;
-      bottom: 4px;
-      left: 0;
-      right: 0;
-      height: 8px;
-      background: rgba(255, 122, 69, 0.2);
-      border-radius: 4px;
-      z-index: -1;
-    }
-    
+
     .hero-subtitle {
-      font-size: 20px;
-      color: var(--gray);
-      max-width: 560px;
-      margin: 0 auto 32px;
+      font-size: 18px;
+      color: var(--dim);
+      max-width: 580px;
+      margin: 0 auto 34px;
+      line-height: 1.7;
     }
-    
+
     .hero-actions {
       display: flex;
-      gap: 12px;
+      gap: 14px;
       justify-content: center;
       flex-wrap: wrap;
     }
-    
+
     .btn {
       display: inline-flex;
       align-items: center;
       gap: 8px;
       padding: 12px 24px;
-      border-radius: 12px;
+      border-radius: 10px;
       font-size: 15px;
       font-weight: 600;
       text-decoration: none;
       transition: all 0.2s;
     }
-    
+
     .btn-primary {
-      background: var(--primary);
-      color: white;
-      box-shadow: 0 4px 14px rgba(255, 122, 69, 0.35);
-    }
-    
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(255, 122, 69, 0.45);
-    }
-    
-    .btn-secondary {
-      background: white;
-      color: var(--dark);
+      background: rgba(0, 240, 255, 0.1);
+      color: var(--accent);
       border: 1px solid var(--border);
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.08);
     }
-    
+
+    .btn-primary:hover {
+      background: rgba(0, 240, 255, 0.18);
+      box-shadow: 0 0 24px rgba(0, 240, 255, 0.18);
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--dim);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
     .btn-secondary:hover {
-      background: var(--light-gray);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--fg);
+      border-color: rgba(0, 240, 255, 0.2);
     }
-    
+
     /* Features */
     .features {
-      padding: 80px 0;
+      padding: 70px 0;
+      position: relative;
+      z-index: 1;
     }
-    
+
     .section-title {
       text-align: center;
-      margin-bottom: 48px;
+      margin-bottom: 44px;
     }
-    
+
     .section-title h2 {
-      font-size: 32px;
+      font-size: 30px;
       font-weight: 700;
       margin-bottom: 10px;
     }
-    
+
     .section-title p {
-      color: var(--gray);
+      color: var(--dim);
       font-size: 16px;
     }
-    
+
     .feature-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 18px;
     }
-    
+
     .feature-card {
-      background: white;
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 28px;
-      transition: all 0.2s;
+      padding: 26px;
     }
-    
-    .feature-card:hover {
-      box-shadow: 0 8px 30px rgba(0,0,0,0.08);
-      transform: translateY(-4px);
-    }
-    
+
     .feature-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 14px;
+      width: 46px;
+      height: 46px;
+      border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 22px;
+      font-size: 20px;
       margin-bottom: 16px;
-      background: var(--primary-light);
+      background: rgba(0, 240, 255, 0.08);
+      border: 1px solid var(--border);
+      color: var(--accent);
     }
-    
+
     .feature-card h3 {
-      font-size: 18px;
+      font-size: 17px;
       font-weight: 700;
       margin-bottom: 8px;
+      color: var(--fg);
     }
-    
+
     .feature-card p {
-      color: var(--gray);
+      color: var(--dim);
       font-size: 14px;
       line-height: 1.6;
     }
-    
+
     /* Tech Stack */
     .tech-stack {
-      background: var(--light-gray);
+      background: rgba(10, 10, 30, 0.5);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
       padding: 60px 0;
       text-align: center;
+      position: relative;
+      z-index: 1;
     }
-    
+
     .badges {
       display: flex;
       gap: 10px;
@@ -220,81 +280,84 @@
       flex-wrap: wrap;
       margin-top: 20px;
     }
-    
+
     .badge {
-      background: white;
+      background: rgba(0, 240, 255, 0.06);
       border: 1px solid var(--border);
       padding: 8px 16px;
       border-radius: 8px;
       font-size: 13px;
       font-weight: 600;
-      color: var(--dark);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      color: var(--accent);
     }
-    
+
     /* QR Section */
     .qr-section {
-      padding: 80px 0;
+      padding: 70px 0;
       text-align: center;
+      position: relative;
+      z-index: 1;
     }
-    
+
     .qr-card {
       display: inline-block;
-      background: white;
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      padding: 32px;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.06);
+      padding: 28px;
     }
-    
+
     .qr-card img {
       width: 180px;
       height: 180px;
       border-radius: 12px;
       margin-bottom: 16px;
+      display: block;
     }
-    
+
     .qr-card p {
-      color: var(--gray);
+      color: var(--dim);
       font-size: 14px;
     }
-    
+
     /* Quick Start */
     .quick-start {
-      background: var(--light-gray);
-      padding: 80px 0;
+      padding: 70px 0;
+      position: relative;
+      z-index: 1;
     }
-    
+
     .code-block {
-      background: #1e1e1e;
-      color: #d4d4d4;
-      border-radius: 16px;
-      padding: 24px;
-      margin-top: 24px;
+      background: rgba(5, 5, 16, 0.8);
+      color: var(--dim);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 22px;
+      margin-top: 22px;
       overflow-x: auto;
       font-family: "SF Mono", Monaco, monospace;
       font-size: 14px;
       line-height: 1.8;
     }
-    
-    .code-block .comment { color: #6a9955; }
-    .code-block .command { color: #9cdcfe; }
-    
+
+    .code-block .comment { color: var(--subtle); }
+    .code-block .command { color: var(--accent); }
+
     /* Footer */
     footer {
-      padding: 40px 0;
+      padding: 36px 0;
       text-align: center;
-      color: #999;
+      color: var(--subtle);
       font-size: 13px;
       border-top: 1px solid var(--border);
+      position: relative;
+      z-index: 1;
     }
-    
+
     footer a {
-      color: var(--primary);
+      color: var(--accent);
       text-decoration: none;
     }
-    
+
     @media (max-width: 640px) {
+      .hero { padding: 80px 0 50px; }
       .hero h1 { font-size: 34px; }
       .hero-subtitle { font-size: 16px; }
       .section-title h2 { font-size: 26px; }
@@ -302,19 +365,24 @@
   </style>
 </head>
 <body>
+  <div class="glow-bg">
+    <div class="glow-1"></div>
+    <div class="glow-2"></div>
+  </div>
+
   <section class="hero">
     <div class="container">
       <div class="hero-badge">
         <span class="dot"></span>
         已部署至 GitHub Pages，打开即用
       </div>
-      <h1>Offer薪资速算器<br><span class="highlight">谈薪不拍脑袋</span></h1>
+      <h1><span class="neon-cyan">Offer薪资速算器</span><br>谈薪不拍脑袋</h1>
       <p class="hero-subtitle">
-        一个纯前端工具型网页，帮助求职者在谈薪过程中快速计算、对比和决策不同薪资方案。
+        纯前端工具型网页，支持多方案管理、税后收入计算、社保公积金、年包速查与 PNG 对比图导出。薪资数据不上传服务器。
       </p>
       <div class="hero-actions">
-        <a href="https://g1968712236-create.github.io/salary-negotiator/" class="btn btn-primary" target="_blank">🚀 立即体验</a>
-        <a href="https://github.com/g1968712236-create/salary-negotiator" class="btn btn-secondary" target="_blank">📂 GitHub 仓库</a>
+        <a href="https://g1968712236-create.github.io/salary-negotiator/" class="btn btn-primary" target="_blank">立即体验</a>
+        <a href="https://github.com/g1968712236-create/salary-negotiator" class="btn btn-secondary" target="_blank">GitHub 仓库</a>
       </div>
     </div>
   </section>
@@ -322,45 +390,45 @@
   <section class="features">
     <div class="container">
       <div class="section-title">
-        <h2>核心功能</h2>
-        <p>5 个模块，覆盖谈薪前中后的关键计算场景</p>
+        <h2 class="neon-cyan">核心功能</h2>
+        <p>4 大模块，覆盖谈薪前中后的关键计算场景</p>
       </div>
-      
+
       <div class="feature-grid">
-        <div class="feature-card">
-          <div class="feature-icon">🎯</div>
-          <h3>期望方案反推</h3>
-          <p>基于当前待遇和期望涨幅，自动反推目标月Base，谈薪报价更有底气。</p>
+        <div class="feature-card cyber-panel">
+          <div class="feature-icon">◈</div>
+          <h3>方案管理</h3>
+          <p>统一维护「当前岗位 / 期望 / 多个 Offer」方案，点击切换即可编辑，支持新增、重命名与删除。</p>
         </div>
-        
-        <div class="feature-card">
-          <div class="feature-icon">📝</div>
-          <h3>Offer 汇总录入</h3>
-          <p>录入实际 Offer 的月薪、薪数、公积金比例等，自动计算年包总包。</p>
+
+        <div class="feature-card cyber-panel">
+          <div class="feature-icon">◉</div>
+          <h3>待遇综合对比</h3>
+          <p>年包、税后收入、净收入、公积金、社保等 9+ 维度横向对比，柱状图直观展示差距。</p>
         </div>
-        
-        <div class="feature-card">
-          <div class="feature-icon">⚖️</div>
-          <h3>9 项指标对比</h3>
-          <p>期望方案与 Offer 逐项对比，年包、税后、公积金差距一目了然。</p>
-        </div>
-        
-        <div class="feature-card">
-          <div class="feature-icon">📊</div>
+
+        <div class="feature-card cyber-panel">
+          <div class="feature-icon">◊</div>
           <h3>年包速查表</h3>
-          <p>月Base 25K~40K × 12~18薪 完整对照表，快速定位自己处在哪一档。</p>
+          <p>自定义月 Base 范围，生成 12~18 薪完整对照表，快速定位自己的薪资档位。</p>
         </div>
-        
-        <div class="feature-card">
-          <div class="feature-icon">🎨</div>
-          <h3>动态背景切换</h3>
-          <p>支持丝绸流场、雨落寒窗、纯色背景切换，长时间使用也不枯燥。</p>
+
+        <div class="feature-card cyber-panel">
+          <div class="feature-icon">◎</div>
+          <h3>个税与年终奖税率表</h3>
+          <p>内置工资薪金综合所得与年终奖单独计税税率表，可自定义修改，税后收入实时重算。</p>
         </div>
-        
-        <div class="feature-card">
-          <div class="feature-icon">🔒</div>
+
+        <div class="feature-card cyber-panel">
+          <div class="feature-icon">◐</div>
+          <h3>导出对比图为 PNG</h3>
+          <p>一键生成待遇对比报告图片，方便保存、分享给朋友或 HR 参考。</p>
+        </div>
+
+        <div class="feature-card cyber-panel">
+          <div class="feature-icon">◑</div>
           <h3>纯前端隐私安全</h3>
-          <p>所有计算在浏览器本地完成，薪资数据不上传服务器，隐私更安心。</p>
+          <p>所有计算在浏览器本地完成，数据仅存于 localStorage，不上传任何服务器。</p>
         </div>
       </div>
     </div>
@@ -369,7 +437,7 @@
   <section class="tech-stack">
     <div class="container">
       <div class="section-title">
-        <h2>技术栈</h2>
+        <h2 class="neon-cyan">技术栈</h2>
         <p>现代前端工具链，轻量、快速、易维护</p>
       </div>
       <div class="badges">
@@ -378,6 +446,7 @@
         <span class="badge">Vite 8</span>
         <span class="badge">Tailwind CSS 3.4</span>
         <span class="badge">Radix UI</span>
+        <span class="badge">Recharts</span>
       </div>
     </div>
   </section>
@@ -385,11 +454,11 @@
   <section class="qr-section">
     <div class="container">
       <div class="section-title">
-        <h2>手机扫码即用</h2>
+        <h2 class="neon-cyan">手机扫码即用</h2>
         <p>无需下载 App，微信或浏览器扫码即可打开</p>
       </div>
-      
-      <div class="qr-card">
+
+      <div class="qr-card cyber-panel">
         <img src="qr-code.png" alt="Offer薪资速算器二维码">
         <p>https://g1968712236-create.github.io/salary-negotiator/</p>
       </div>
@@ -399,10 +468,10 @@
   <section class="quick-start">
     <div class="container">
       <div class="section-title">
-        <h2>本地开发</h2>
+        <h2 class="neon-cyan">本地开发</h2>
         <p>克隆仓库后，两步跑起来</p>
       </div>
-      
+
       <div class="code-block">
         <span class="comment"># 安装依赖</span><br>
         <span class="command">npm install</span><br><br>
