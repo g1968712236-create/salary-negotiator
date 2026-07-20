@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>小红书宣传图 - Offer薪资速算器（深色版）</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .poster {
+      width: 375px;
+      min-height: 500px;
+      background: linear-gradient(180deg, #0a0a1a 0%, #050510 100%);
+      border-radius: 24px;
+      padding: 28px 24px 32px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(0, 240, 255, 0.1);
+    }
+    
+    .poster::before {
+      content: "";
+      position: absolute;
+      top: -80px;
+      right: -80px;
+      width: 220px;
+      height: 220px;
+      background: radial-gradient(circle, rgba(0, 240, 255, 0.18) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+    
+    .poster::after {
+      content: "";
+      position: absolute;
+      bottom: -100px;
+      left: -50px;
+      width: 240px;
+      height: 240px;
+      background: radial-gradient(circle, rgba(184, 41, 221, 0.14) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+    
+    .header {
+      position: relative;
+      z-index: 1;
+      margin-bottom: 20px;
+    }
+    
+    .tag {
+      display: inline-block;
+      background: rgba(0, 240, 255, 0.12);
+      color: #00f0ff;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 12px;
+      margin-bottom: 12px;
+      letter-spacing: 0.5px;
+      border: 1px solid rgba(0, 240, 255, 0.2);
+    }
+    
+    .title {
+      font-size: 26px;
+      font-weight: 800;
+      line-height: 1.35;
+      color: #e0e8ff;
+      margin-bottom: 10px;
+    }
+    
+    .title .highlight {
+      color: #00f0ff;
+      text-shadow: 0 0 12px rgba(0, 240, 255, 0.35);
+      position: relative;
+    }
+    
+    .subtitle {
+      font-size: 14px;
+      color: #8899aa;
+      line-height: 1.6;
+    }
+    
+    .features {
+      position: relative;
+      z-index: 1;
+      margin: 22px 0;
+    }
+    
+    .feature-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      background: rgba(10, 10, 30, 0.6);
+      padding: 14px 16px;
+      border-radius: 16px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(0, 240, 255, 0.08);
+      backdrop-filter: blur(10px);
+    }
+    
+    .feature-icon {
+      width: 32px;
+      height: 32px;
+      min-width: 32px;
+      background: linear-gradient(135deg, #00f0ff 0%, #b829dd 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 15px;
+      box-shadow: 0 0 12px rgba(0, 240, 255, 0.2);
+    }
+    
+    .feature-text h3 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #e0e8ff;
+      margin-bottom: 3px;
+    }
+    
+    .feature-text p {
+      font-size: 12px;
+      color: #8899aa;
+      line-height: 1.5;
+    }
+    
+    .cta-box {
+      position: relative;
+      z-index: 1;
+      background: linear-gradient(135deg, rgba(0, 240, 255, 0.1) 0%, rgba(184, 41, 221, 0.08) 100%);
+      border-radius: 20px;
+      padding: 20px;
+      text-align: center;
+      color: white;
+      margin: 24px 0 18px;
+      border: 1px solid rgba(0, 240, 255, 0.15);
+    }
+    
+    .cta-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: #00f0ff;
+      text-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+    }
+    
+    .qr-code {
+      width: 150px;
+      height: 150px;
+      background: white;
+      border-radius: 12px;
+      padding: 8px;
+      margin: 0 auto 10px;
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.15);
+    }
+    
+    .qr-code img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    
+    .url {
+      font-size: 12px;
+      color: rgba(224, 232, 255, 0.85);
+      word-break: break-all;
+    }
+    
+    .footer {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+    }
+    
+    .hashtags {
+      font-size: 12px;
+      color: #00f0ff;
+      font-weight: 600;
+      line-height: 1.6;
+      margin-bottom: 8px;
+    }
+    
+    .disclaimer {
+      font-size: 10px;
+      color: #556677;
+      line-height: 1.5;
+    }
+    
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+      .poster {
+        box-shadow: none;
+        border-radius: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="poster">
+    <div class="header">
+      <span class="tag">求职干货</span>
+      <h1 class="title">
+        Offer拿到手<br>
+        <span class="highlight">薪资算清楚</span> ✨
+      </h1>
+      <p class="subtitle">
+        3秒对比多家Offer待遇，谈薪前心里先有底，不再被HR牵着走
+      </p>
+    </div>
+    
+    <div class="features">
+      <div class="feature-item">
+        <div class="feature-icon">🎯</div>
+        <div class="feature-text">
+          <h3>期望反推</h3>
+          <p>输入当前待遇和期望涨幅，自动算出目标月Base</p>
+        </div>
+      </div>
+      
+      <div class="feature-item">
+        <div class="feature-icon">⚖️</div>
+        <div class="feature-text">
+          <h3>Offer横向PK</h3>
+          <p>9项指标逐项对比，年包差距一眼看清</p>
+        </div>
+      </div>
+      
+      <div class="feature-item">
+        <div class="feature-icon">📊</div>
+        <div class="feature-text">
+          <h3>年包速查表</h3>
+          <p>月Base 25K-40K × 12-18薪，完整对照</p>
+        </div>
+      </div>
+      
+      <div class="feature-item">
+        <div class="feature-icon">🔒</div>
+        <div class="feature-text">
+          <h3>打开即用</h3>
+          <p>纯前端工具，数据不上传，手机电脑都能用</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="cta-box">
+      <div class="cta-title">👇 扫码免费使用</div>
+      <div class="qr-code">
+        <img src="qr-code.png" alt="Offer薪资速算器二维码">
+      </div>
+      <div class="url">https://g1968712236-create.github.io/salary-negotiator/</div>
+    </div>
+    
+    <div class="footer">
+      <div class="hashtags">
+        #谈薪技巧 #Offer选择 #薪资谈判 #求职干货 #年终奖 #公积金
+      </div>
+      <div class="disclaimer">
+        工具结果仅供参考，具体薪资、公积金及税务以劳动合同和当地政策为准
+      </div>
+    </div>
+  </div>
+</body>
+</html>

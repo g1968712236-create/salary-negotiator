@@ -1,11 +1,11 @@
 # 薪资速算器 — 待办事项与后续推进清单
 
-> 记录时间：2026-07-16
-> 当前状态：本地功能开发与验证已完成，Git 推送到 GitHub 因网络环境受限暂未完成。
+> 记录时间：2026-07-17
+> 当前状态：技术开发、构建验证与 Git 推送均已完成。当前剩余工作集中在运营推广与可选优化。
 
 ---
 
-## ✅ 本次已完成的工作
+## ✅ 已归档完成的工作
 
 ### 1. 架构重构（已完成）
 - 将 `src/App.tsx` 从约 2453 行拆分为模块化结构。
@@ -37,85 +37,77 @@
   - `src/components/forms/NumericInput.tsx`：`onKeyDown` 事件放行中文句号 `。`。
 - 已验证：用户可在涨幅输入框中使用中文句号输入小数。
 
+### 5. 测试补充（已完成）
+- 文件：`TEST_CASES.md`、Vitest 单元/组件测试、Playwright E2E 测试
+- 已覆盖核心计算逻辑、组件渲染、关键用户流程。
+- 提交记录：`58f094c test: 补充 Vitest 单元/组件测试与 Playwright E2E 测试`
+
+### 6. 官网与介绍页更新（已完成）
+- 文件：`public/website/index.html`、`public/landing.html`
+- 风格对齐应用主界面，功能文案已更新。
+- 提交记录：`f1ba408 feat(landing): 官网风格对齐应用并更新功能文案`
+
+### 7. Git 提交与推送（已完成）
+- 所有技术修改与新增文件均已提交并推送到 `origin/main`。
+- 当前本地分支与远程同步：
+  ```text
+  * main 58f094c [origin/main] test: 补充 Vitest 单元/组件测试与 Playwright E2E 测试
+  ```
+
+### 8. 构建与类型检查验证（已完成）
+- 运行：
+  ```bash
+  npm run build && npm run lint
+  ```
+- 结果：构建成功，`oxlint` 0 warnings / 0 errors。
+
 ---
 
-## 🔄 当前 Git 工作区状态
+## 📦 当前工作区未跟踪文件
+
+以下文件在本次会话中新增，尚未加入 Git：
 
 ```text
- M src/App.tsx
-?? src/components/Background.tsx
-?? src/components/ExportReport.tsx
-?? src/components/MultiOfferDiffView.tsx
-?? src/components/SalaryChart.tsx
-?? src/components/SalarySummary.tsx
-?? src/components/SalaryTable.tsx
-?? src/components/SocialInsuranceEditor.tsx
-?? src/components/TaxBracketsEditor.tsx
-?? src/components/forms/
-?? src/data/
-?? src/domain/
-?? src/hooks/use-background.ts
-?? src/hooks/use-salary-store.ts
+?? PROJECT_BRIEF.md
+?? public/xiaohongshu-poster-dark.html
+?? public/xiaohongshu-poster-dark.png
+?? scripts/generate-poster.js
 ```
 
-- `src/App.tsx` 为已跟踪文件的修改。
-- 其余新增文件/目录均为未跟踪（`??`），需要 `git add` 后提交。
+建议操作：
+
+```bash
+git add PROJECT_BRIEF.md public/xiaohongshu-poster-dark.html public/xiaohongshu-poster-dark.png scripts/generate-poster.js
+git commit -m "docs: 新增项目概要；运营：新增深色版小红书海报与生成脚本"
+git push origin main
+```
 
 ---
 
-## ⏳ 待办事项（待网络环境恢复后推进）
+## ⏳ 当前待办事项
 
-### 高优先级
-- [ ] **提交本地更改到 Git 仓库**
-  - 将所有修改和新增文件加入暂存区：
-    ```bash
-    git add .
-    ```
-  - 提交并附带清晰提交信息：
-    ```bash
-    git commit -m "refactor: 拆分 App.tsx 为模块化架构，修复涨幅输入与图表标注"
-    ```
+### 运营推广（当前重点）
+- [ ] **小红书宣传推广**
+  - 目标平台：小红书（图文笔记为主）。
+  - 已有素材：
+    - 浅色版海报 `public/xiaohongshu-poster.png`
+    - 深色版海报 `public/xiaohongshu-poster-dark.png`
+    - 推广文案草稿（见最近一次对话记录）。
+  - 待办子项：
+    - [ ] 确定最终发布文案版本（痛点型 / 干货型 / 数据型中选 1~2 个）。
+    - [ ] 在小红书注册/登录账号后发布首条笔记，首图建议使用深色版海报。
+    - [ ] 在评论区置顶工具链接与使用说明，引导转化。
+    - [ ] 跟踪笔记数据（曝光、点赞、收藏、评论），迭代文案与图片。
+  - **Skill 需求 ⚠️**：
+    - 当前 Agent 尚未加载小红书内容运营相关 Skill。
+    - 后续推进时，建议先 **加载或制作「小红书运营」Skill**，以获取平台规则、爆款标题公式、最佳发布时间、标签策略、合规禁忌等知识，提升内容运营效果。
+    - 可参考方向：小红书笔记结构、封面图设计规范、薯条投放基础、评论区运营话术、账号冷启动策略。
 
-- [ ] **推送到 GitHub**
-  - 检查当前远程仓库配置：
-    ```bash
-    git remote -v
-    ```
-  - 执行推送：
-    ```bash
-    git push origin <当前分支名>
-    ```
-  - 若因网络问题失败，可尝试切换网络环境、使用代理，或等待网络恢复后重试。
-
-### 中优先级（建议推送前完成）
-- [ ] **再次验证构建与类型检查**
-  - 运行：
-    ```bash
-    npm run build && npm run lint
-    ```
-  - 期望结果：构建成功，`lint` 无 warnings/errors。
-
-- [ ] **运行本地服务验证网页功能**
-  - 当前 Vite 开发服务器已在后台运行：`http://localhost:5173/`
-  - 若服务已停止，可重新启动：
-    ```bash
-    npm run dev
-    ```
-  - 重点验证：
-    - 待遇综合对比柱状图 Hover 时显示涨幅 Tooltip。
-    - 柱形顶部涨幅标注正常显示。
-    - 期望 Tab 下涨幅输入框支持：
-      - 整数输入
-      - 小数点 `.` 输入
-      - 中文句号 `。` 自动转为小数点
-      - 输入过程中不自动格式化为两位小数
-      - 失焦后才提交并格式化
-    - 月 Base 等其他数字输入框行为保持一致。
-
-### 低优先级（可选）
+### 可选优化（低优先级）
 - [ ] 检查 `src/App.tsx` 重构后是否还有未拆分干净的重复逻辑。
-- [ ] 考虑为新增的领域函数和组件补充单元测试（如项目已有测试框架）。
-- [ ] 清理本地不再使用的临时日志或调试代码（本次修复过程中未遗留）。
+- [ ] 考虑为新增的领域函数和组件补充更多边界测试。
+- [ ] 调研是否需要接入第三方分享 SDK 或短链接服务，便于小红书引流统计。
+- [ ] 评估深色版小红书海报的转化效果，必要时制作第三版 A/B 测试素材。
 
 ---
 
@@ -123,13 +115,16 @@
 
 - 启动命令：`npm run dev`
 - 访问地址：`http://localhost:5173/`
-- 任务 ID（如仍运行）：`bash-r3dsx76w`
 - 若端口被占用，Vite 会自动提示新的可用端口。
 
 ---
 
 ## 📝 备注
 
-- 本次修改未新增第三方依赖，无需重新运行 `npm install`。
-- 所有新增目录和文件均位于 `src/` 下，未改动项目根配置（如 `vite.config.ts`、`package.json`）。
-- 建议在网络环境恢复后，先执行一次完整的构建与 lint 检查，确认无问题后再推送。
+- 技术开发阶段已结束，当前进入运营推广阶段。
+- 所有计算结果仅供参考，具体薪资、公积金及税务以劳动合同和当地政策为准。
+- 宣传推广时需注意合规，避免使用「保证」「准确」等绝对化表述。
+
+---
+
+*本文件应随项目进展持续更新。*
