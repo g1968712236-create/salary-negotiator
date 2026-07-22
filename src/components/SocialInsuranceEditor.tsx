@@ -73,7 +73,7 @@ export function SocialInsuranceEditor({ value, onChange, defaultBase }: SocialIn
             onChange={(e) => onChange({ ...value, enabled: e.target.checked })}
             className="accent-accent h-3.5 w-3.5"
           />
-          计入社保
+          扣除社保
         </label>
       </div>
 
