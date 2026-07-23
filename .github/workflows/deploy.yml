@@ -37,6 +37,10 @@ jobs:
         run: npm run build
         env:
           BASE_PATH: /${{ github.event.repository.name }}/
+          # PostHog 埋点（ANALYTICS.md §11）：Key 为客户端公开用途，存 Secrets；
+          # 未配置时代码内全部静默 no-op，不影响构建
+          VITE_POSTHOG_KEY: ${{ secrets.VITE_POSTHOG_KEY }}
+          VITE_POSTHOG_HOST: ${{ vars.VITE_POSTHOG_HOST }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
