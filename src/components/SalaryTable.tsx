@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import {
   Table,
   TableBody,
@@ -9,32 +9,49 @@ import {
 } from "@/components/ui/table"
 import { NumericInput } from "@/components/forms/NumericInput"
 import { cn } from "@/lib/utils"
+import { track } from "@/lib/analytics"
 import { formatMoney, MIN_BASE, MONTHS_RANGE } from "@/domain"
+
+/** 速查范围默认值（E-011 is_default 比较用） */
+const DEFAULT_MAX_BASE = 40000
 
 export function SalaryTable() {
   const [minBaseInput, setMinBaseInput] = useState(String(MIN_BASE))
-  const [maxBaseInput, setMaxBaseInput] = useState("40000")
+  const [maxBaseInput, setMaxBaseInput] = useState(String(DEFAULT_MAX_BASE))
   const [minBaseCommitted, setMinBaseCommitted] = useState(MIN_BASE)
-  const [maxBaseCommitted, setMaxBaseCommitted] = useState(40000)
+  const [maxBaseCommitted, setMaxBaseCommitted] = useState(DEFAULT_MAX_BASE)
+  const focusMinRef = useRef<number | null>(null)
+  const focusMaxRef = useRef<number | null>(null)
 
   const commitMin = (raw: string) => {
     if (raw === "") {
       setMinBaseInput(String(minBaseCommitted))
+      focusMinRef.current = null
       return
     }
     const num = Math.max(0, Math.min(Number(raw), maxBaseCommitted))
     setMinBaseCommitted(num)
     setMinBaseInput(String(num))
+    // E-011 lookup_range_committed（T2）：值相对 focus 时发生变化才报，不上报具体数值
+    if (focusMinRef.current !== null && num !== focusMinRef.current) {
+      track("lookup_range_committed", { which: "min", is_default: num === MIN_BASE })
+    }
+    focusMinRef.current = null
   }
 
   const commitMax = (raw: string) => {
     if (raw === "") {
       setMaxBaseInput(String(maxBaseCommitted))
+      focusMaxRef.current = null
       return
     }
     const num = Math.max(minBaseCommitted, Math.min(Number(raw), 10000000))
     setMaxBaseCommitted(num)
     setMaxBaseInput(String(num))
+    if (focusMaxRef.current !== null && num !== focusMaxRef.current) {
+      track("lookup_range_committed", { which: "max", is_default: num === DEFAULT_MAX_BASE })
+    }
+    focusMaxRef.current = null
   }
 
   const minBase = Math.min(minBaseCommitted, maxBaseCommitted)
@@ -60,6 +77,9 @@ export function SalaryTable() {
               }
             }}
             onBlur={() => commitMin(minBaseInput)}
+            onFocus={() => {
+              focusMinRef.current = minBaseCommitted
+            }}
             className="text-accent"
             placeholder="0"
           />
@@ -75,6 +95,9 @@ export function SalaryTable() {
               }
             }}
             onBlur={() => commitMax(maxBaseInput)}
+            onFocus={() => {
+              focusMaxRef.current = maxBaseCommitted
+            }}
             className="text-accent"
             placeholder="40000"
           />

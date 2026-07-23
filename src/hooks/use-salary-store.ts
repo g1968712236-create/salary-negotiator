@@ -12,6 +12,7 @@ import {
   uid,
 } from "@/domain"
 import { loadSalaryState, saveSalaryState } from "@/data"
+import { track } from "@/lib/analytics"
 
 export function useSalaryStore() {
   const [scenarios, setScenarios] = useState<Scenario[]>(defaultScenarios())
@@ -89,30 +90,30 @@ export function useSalaryStore() {
   }, [expectedAnnualPackage, expectedScenario, updateScenario])
 
   const addScenario = useCallback(() => {
-    setScenarios((prev) => {
-      const offerCount = prev.filter((s) => s.role === "offer").length
-      const newScenario: Scenario = {
-        id: uid(),
-        name: `Offer ${offerCount + 1}`,
-        role: "offer",
-        data: createSalaryData(35000, 15, 0, 12, 12, 0, 0),
-      }
-      setActiveScenarioId(newScenario.id)
-      return [...prev, newScenario]
-    })
-  }, [])
+    const offerCount = scenarios.filter((s) => s.role === "offer").length
+    const newScenario: Scenario = {
+      id: uid(),
+      name: `Offer ${offerCount + 1}`,
+      role: "offer",
+      data: createSalaryData(35000, 15, 0, 12, 12, 0, 0),
+    }
+    setScenarios((prev) => [...prev, newScenario])
+    setActiveScenarioId(newScenario.id)
+    // E-003 scenario_added（T1）：只报新增后的 Offer 总数
+    track("scenario_added", { offer_count: offerCount + 1 })
+  }, [scenarios])
 
   const removeScenario = useCallback((id: string) => {
-    setScenarios((prev) => {
-      const scenario = prev.find((s) => s.id === id)
-      if (!scenario || scenario.role !== "offer") return prev
-      const next = prev.filter((s) => s.id !== id)
-      if (activeScenarioId === id && next.length > 0) {
-        setActiveScenarioId(next[0].id)
-      }
-      return next
-    })
-  }, [activeScenarioId])
+    const scenario = scenarios.find((s) => s.id === id)
+    if (!scenario || scenario.role !== "offer") return
+    const next = scenarios.filter((s) => s.id !== id)
+    if (activeScenarioId === id && next.length > 0) {
+      setActiveScenarioId(next[0].id)
+    }
+    setScenarios(next)
+    // E-004 scenario_removed（T1）：只报删除后剩余的 Offer 总数
+    track("scenario_removed", { offer_count: next.filter((s) => s.role === "offer").length })
+  }, [scenarios, activeScenarioId])
 
   const renameScenario = useCallback((id: string, name: string) => {
     setScenarios((prev) => prev.map((s) => (s.id === id ? { ...s, name } : s)))

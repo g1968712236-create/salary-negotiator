@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from "react"
 import { toPng } from "html-to-image"
+import { track } from "@/lib/analytics"
 import { BRAND_NAME, calcSummary, defaultCurrent, formatMoney, SITE_URL, type SalaryData, type Scenario, type Summary, type TaxBracket } from "@/domain"
 
 export function ExportReport({
@@ -17,6 +18,8 @@ export function ExportReport({
   const handleExport = useCallback(async () => {
     if (!exportRef.current) return
     setExporting(true)
+    // E-014 report_exported：只报 Offer 数量，不含任何薪资数值
+    const offerCount = scenarios.filter((s) => s.role === "offer").length
     let clone: HTMLElement | null = null
     try {
       // 克隆到 body 并置为可见，避免 off-screen 元素在某些浏览器里无法被 html-to-image 捕获
@@ -39,16 +42,22 @@ export function ExportReport({
       link.download = `offer对比_${new Date().toISOString().slice(0, 10)}.png`
       link.href = dataUrl
       link.click()
+      track("report_exported", { success: true, offer_count: offerCount })
     } catch (err) {
       console.error("Export failed:", err)
       let message = "未知错误"
+      // E-014 失败时只报错误类别，不含报错原文（避免夹带 DOM 内容）
+      let errorKind: "render" | "resource" | "unknown" = "unknown"
       if (err instanceof Error) {
         message = err.message
+        errorKind = "render"
       } else if (err && typeof err === "object" && "type" in err) {
         message = `资源加载失败（${(err as Event).type}），请检查网络或二维码图片路径`
+        errorKind = "resource"
       } else {
         message = String(err)
       }
+      track("report_exported", { success: false, offer_count: offerCount, error_kind: errorKind })
       alert(`导出失败：${message}`)
     } finally {
       if (clone && clone.parentNode) {
@@ -56,7 +65,7 @@ export function ExportReport({
       }
       setExporting(false)
     }
-  }, [])
+  }, [scenarios])
 
   const currentScenario = scenarios.find((s) => s.role === "current") || scenarios[0]
   const compareScenarios = scenarios.filter((s) => s.id !== currentScenario?.id)

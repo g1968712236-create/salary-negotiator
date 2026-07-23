@@ -1,18 +1,27 @@
 import { NumericInput } from "@/components/forms/NumericInput"
+import { track, trackDebounced } from "@/lib/analytics"
 import { DEFAULT_ANNUAL_TAX_BRACKETS, DEFAULT_BONUS_TAX_BRACKETS, type TaxBracket } from "@/domain"
 
 interface TaxBracketsEditorProps {
   title: string
+  /** 埋点用：年度综合所得税率表 / 年终奖税率表（ANALYTICS.md E-012/E-013） */
+  table: "annual" | "bonus"
   brackets: TaxBracket[]
   onChange: (brackets: TaxBracket[]) => void
   onReset: () => void
   rateUnit?: string
 }
 
-export function TaxBracketsEditor({ title, brackets, onChange, onReset, rateUnit = "%" }: TaxBracketsEditorProps) {
+export function TaxBracketsEditor({ title, table, brackets, onChange, onReset, rateUnit = "%" }: TaxBracketsEditorProps) {
   const update = (index: number, field: keyof TaxBracket, value: number) => {
     const next = brackets.map((b, i) => (i === index ? { ...b, [field]: value } : b))
     onChange(next)
+    // E-012 tax_bracket_edited（T4 防抖）：只报表/列/级数，不上报修改后的数值
+    trackDebounced(`tax:${table}:${String(field)}:${index}`, "tax_bracket_edited", {
+      table,
+      field: String(field),
+      bracket_index: index + 1,
+    })
   }
 
   return (
@@ -20,7 +29,11 @@ export function TaxBracketsEditor({ title, brackets, onChange, onReset, rateUnit
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium text-accent">{title}</span>
         <button
-          onClick={onReset}
+          onClick={() => {
+            onReset()
+            // E-013 tax_brackets_reset（T1）
+            track("tax_brackets_reset", { table })
+          }}
           className="rounded-md border border-accent/20 px-2 py-1 text-[10px] text-accent transition-colors hover:bg-accent/10"
         >
           恢复默认
@@ -122,12 +135,14 @@ export function TaxBracketsTab({
     <div className="animate-in space-y-4">
       <TaxBracketsEditor
         title="工资薪金综合所得 · 年度税率表"
+        table="annual"
         brackets={annualBrackets}
         onChange={onAnnualChange}
         onReset={() => onAnnualChange(DEFAULT_ANNUAL_TAX_BRACKETS.map((b) => ({ ...b })))}
       />
       <TaxBracketsEditor
         title="年终奖单独计税 · 月度税率表"
+        table="bonus"
         brackets={bonusBrackets}
         onChange={onBonusChange}
         onReset={() => onBonusChange(DEFAULT_BONUS_TAX_BRACKETS.map((b) => ({ ...b })))}

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { loadBackgroundPreference, saveBackgroundPreference } from "@/data"
+import { track } from "@/lib/analytics"
 import type { BgColor, BgMode } from "@/domain"
 
 const BG_MODES: { key: BgMode; label: string }[] = [
@@ -33,7 +34,17 @@ export function useBackground() {
 
   const cycleBgMode = () => {
     const idx = BG_MODES.findIndex((m) => m.key === bgMode)
-    setBgMode(BG_MODES[(idx + 1) % BG_MODES.length].key)
+    const next = BG_MODES[(idx + 1) % BG_MODES.length].key
+    setBgMode(next)
+    // E-015 background_switched（T1）：切换背景模式
+    track("background_switched", { change_kind: "mode", bg_mode: next })
+  }
+
+  const setBgColorTracked = (color: BgColor) => {
+    if (color === bgColor) return
+    setBgColor(color)
+    // E-015 background_switched（T1）：切换纯色
+    track("background_switched", { change_kind: "color", bg_mode: bgMode })
   }
 
   return {
@@ -42,7 +53,7 @@ export function useBackground() {
     bgModes: BG_MODES,
     bgColors: BG_COLORS,
     setBgMode,
-    setBgColor,
+    setBgColor: setBgColorTracked,
     cycleBgMode,
   }
 }

@@ -19,7 +19,8 @@ import { SocialInsuranceEditor } from "@/components/SocialInsuranceEditor"
 import { TaxBracketsTab } from "@/components/TaxBracketsEditor"
 import { useBackground } from "@/hooks/use-background"
 import { useSalaryStore } from "@/hooks/use-salary-store"
-import { BRAND_NAME, CITY_PRESETS, clamp, formatMoney, type SalaryData, type Scenario, type TabKey } from "@/domain"
+import { flushDebounced, increaseValueBucket, track, trackDebounced } from "@/lib/analytics"
+import { BRAND_NAME, CITY_PRESETS, clamp, createSalaryData, defaultCurrent, defaultExpected, formatMoney, type SalaryData, type Scenario, type TabKey } from "@/domain"
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabKey>("scenario")
@@ -56,9 +57,49 @@ export default function App() {
     { key: "tax", label: "税率表" },
   ]
 
+  /** 各角色方案的默认值（用于 E-007 的 is_default 低成本比较） */
+  const defaultDataForRole = (role: Scenario["role"]): SalaryData =>
+    role === "current"
+      ? defaultCurrent()
+      : role === "expected"
+        ? defaultExpected()
+        : createSalaryData(35000, 15, 0, 12, 12, 0, 0)
+
+  /** 方案在 offer 列表中的序号（埋点 offer_index 属性；非 offer 方案为 undefined，不携带该属性） */
+  const offerIndexOf = (s: Scenario): number | undefined =>
+    s.role === "offer"
+      ? scenarios.filter((x) => x.role === "offer").findIndex((x) => x.id === s.id) + 1
+      : undefined
+
   const scenarioForm = (scenario: Scenario) => {
     const data = scenario.data
     const setData = (updater: (data: SalaryData) => SalaryData) => updateScenario(scenario.id, updater)
+    const defaults = defaultDataForRole(scenario.role)
+    const offerIndex = offerIndexOf(scenario)
+    const offerIndexProp = offerIndex !== undefined ? { offer_index: offerIndex } : {}
+
+    /* E-007 field_edited（ANALYTICS.md §6）：只报字段标识，绝不上报输入值 */
+    const trackField = (
+      fieldKey: string,
+      inputMethod: "keyboard" | "slider" | "click",
+      isDefault: boolean
+    ) =>
+      track("field_edited", {
+        scenario_role: scenario.role,
+        ...offerIndexProp,
+        field_key: fieldKey,
+        input_method: inputMethod,
+        is_default: isDefault,
+      })
+    /* T4 防抖字段：onChange 逐字符直改状态，统一 1.5s 防抖聚合 */
+    const trackFieldDebounced = (fieldKey: string, isDefault: boolean) =>
+      trackDebounced(`${scenario.id}:${fieldKey}`, "field_edited", {
+        scenario_role: scenario.role,
+        ...offerIndexProp,
+        field_key: fieldKey,
+        input_method: "keyboard",
+        is_default: isDefault,
+      })
 
     const handleMonthlyBaseChange = (v: number) => {
       setData((prev) => {
@@ -95,46 +136,71 @@ export default function App() {
         <BaseInputSlider
           value={data.monthlyBase}
           onChange={handleMonthlyBaseChange}
+          onCommit={(v) => trackField("monthly_base", "slider", v === defaults.monthlyBase)}
+          onKeyboardCommit={(v) => trackField("monthly_base", "keyboard", v === defaults.monthlyBase)}
           label="月Base（元/月）"
           data-testid={scenario.role === 'expected' ? 'expected-monthly-base-input' : undefined}
         />
         <MonthsSelector
           value={data.months}
-          onChange={(v) => setData((prev) => ({ ...prev, months: v }))}
+          onChange={(v) => {
+            setData((prev) => ({ ...prev, months: v }))
+            if (v !== data.months) trackField("months", "click", v === defaults.months)
+          }}
         />
         <ProvidentBaseInput
           value={data.providentBase}
-          onChange={(v) => setData((prev) => ({ ...prev, providentBase: v }))}
+          onChange={(v) => {
+            setData((prev) => ({ ...prev, providentBase: v }))
+            trackFieldDebounced("provident_base", v === defaults.providentBase)
+          }}
           placeholder={String(data.monthlyBase)}
         />
         <RateSlider
           value={data.personalRate}
           onChange={(v) => setData((prev) => ({ ...prev, personalRate: v }))}
+          onCommit={(v) => trackField("provident_personal_rate", "slider", v === defaults.personalRate)}
           label="个人缴纳比例"
         />
         <RateSlider
           value={data.companyRate}
           onChange={(v) => setData((prev) => ({ ...prev, companyRate: v }))}
+          onCommit={(v) => trackField("provident_company_rate", "slider", v === defaults.companyRate)}
           label="公司缴纳比例"
         />
         <SocialInsuranceEditor
           value={data.socialInsurance}
           onChange={(v) => setData((prev) => ({ ...prev, socialInsurance: v }))}
           defaultBase={data.monthlyBase}
+          scenarioRole={scenario.role}
+          offerIndex={offerIndex}
+          scenarioId={scenario.id}
         />
         <DeductionInput
           value={data.deduction}
-          onChange={(v) => setData((prev) => ({ ...prev, deduction: v }))}
+          onChange={(v) => {
+            setData((prev) => ({ ...prev, deduction: v }))
+            trackFieldDebounced("deduction", v === defaults.deduction)
+          }}
         />
         <ExpenseInput
           value={data.monthlyExpense}
-          onChange={(v) => setData((prev) => ({ ...prev, monthlyExpense: v }))}
+          onChange={(v) => {
+            setData((prev) => ({ ...prev, monthlyExpense: v }))
+            trackFieldDebounced("monthly_expense", v === defaults.monthlyExpense)
+          }}
         />
         <ExtraModules
           equity={data.equity}
-          onEquityChange={(v) => setData((prev) => ({ ...prev, equity: v }))}
+          onEquityChange={(v) => {
+            setData((prev) => ({ ...prev, equity: v }))
+            trackFieldDebounced("equity", v === defaults.equity)
+          }}
           signingBonus={data.signingBonus}
-          onSigningBonusChange={(v) => setData((prev) => ({ ...prev, signingBonus: v }))}
+          onSigningBonusChange={(v) => {
+            setData((prev) => ({ ...prev, signingBonus: v }))
+            trackFieldDebounced("signing_bonus", v === defaults.signingBonus)
+          }}
         />
         <SalarySummary
           data={data}
@@ -170,7 +236,17 @@ export default function App() {
                       <div
                         key={s.id}
                         data-testid={`scenario-chip-${s.role}`}
-                        onClick={() => setActiveScenarioId(s.id)}
+                        onClick={() => {
+                          if (s.id === activeScenarioId) return
+                          // E-005 scenario_switched（T1）；切换方案前 flush 防抖队列（§5-T4）
+                          flushDebounced()
+                          const idx = offerIndexOf(s)
+                          track("scenario_switched", {
+                            scenario_role: s.role,
+                            ...(idx !== undefined ? { offer_index: idx } : {}),
+                          })
+                          setActiveScenarioId(s.id)
+                        }}
                         className={cn(
                           "group flex cursor-pointer items-center justify-between gap-2 rounded-lg border px-3 py-2 text-xs transition-all",
                           activeScenarioId === s.id
@@ -180,7 +256,16 @@ export default function App() {
                       >
                         <input
                           value={s.name}
-                          onChange={(e) => renameScenario(s.id, e.target.value)}
+                          onChange={(e) => {
+                            renameScenario(s.id, e.target.value)
+                            // E-006 scenario_renamed（T4 防抖）：只报角色与名称长度，不上报名称内容
+                            const idx = offerIndexOf(s)
+                            trackDebounced(`${s.id}:rename`, "scenario_renamed", {
+                              scenario_role: s.role,
+                              ...(idx !== undefined ? { offer_index: idx } : {}),
+                              name_length: e.target.value.length,
+                            })
+                          }}
                           className={cn(
                             "w-20 bg-transparent text-xs outline-none",
                             activeScenarioId === s.id ? "text-accent" : "text-dim group-hover:text-foreground"
@@ -222,9 +307,16 @@ export default function App() {
                       allowDecimal
                       data-testid="expected-increase-input"
                       onBlur={() => {
+                        // E-008 increase_committed（T2 键盘通道）：值实际变化才报，只报分桶区间（§7）
                         if (increaseInput === "") {
                           setIncreasePercent(0)
                           setIncreaseInput("0")
+                          if (increasePercent !== 0) {
+                            track("increase_committed", {
+                              input_method: "keyboard",
+                              value_bucket: increaseValueBucket(0),
+                            })
+                          }
                           return
                         }
                         const num = Number(increaseInput)
@@ -235,6 +327,12 @@ export default function App() {
                         const committed = Math.max(0, Math.min(100, num))
                         setIncreasePercent(committed)
                         setIncreaseInput(String(committed))
+                        if (committed !== increasePercent) {
+                          track("increase_committed", {
+                            input_method: "keyboard",
+                            value_bucket: increaseValueBucket(committed),
+                          })
+                        }
                       }}
                       className="w-20 text-accent"
                     />
@@ -242,6 +340,13 @@ export default function App() {
                   <Slider
                     value={[Math.round(increasePercent)]}
                     onValueChange={(v) => setIncreasePercent(v[0])}
+                    onValueCommit={(v) =>
+                      // E-008 increase_committed（T3 滑块通道）
+                      track("increase_committed", {
+                        input_method: "slider",
+                        value_bucket: increaseValueBucket(v[0]),
+                      })
+                    }
                     min={0}
                     max={100}
                     step={1}
@@ -330,7 +435,13 @@ export default function App() {
             {tabs.map((t) => (
               <button
                 key={t.key}
-                onClick={() => setActiveTab(t.key)}
+                onClick={() => {
+                  if (t.key === activeTab) return
+                  // E-002 tab_switched（T1）：切换前先 flush 防抖队列（§5-T4）
+                  flushDebounced()
+                  track("tab_switched", { tab_key: t.key, from_tab: activeTab })
+                  setActiveTab(t.key)
+                }}
                 className={cn(
                   "rounded-lg px-4 py-2.5 text-xs transition-all",
                   activeTab === t.key
@@ -349,7 +460,7 @@ export default function App() {
 
       <footer className="fixed bottom-0 left-0 right-0 z-40 border-t border-accent/10 bg-base/85 px-4 py-2 text-center text-[10px] text-subtle backdrop-blur-md">
         <div className="mx-auto flex max-w-[1152px] flex-col items-center justify-between gap-2 sm:flex-row">
-          <span>{BRAND_NAME} · 数据仅供参考，具体以劳动合同和当地政策为准</span>
+          <span>{BRAND_NAME} · 数据仅供参考，具体以劳动合同和当地政策为准 · 本站使用匿名统计以改进产品，薪资数据均在本地计算，不会上传</span>
           {bgMode === "solid" && (
             <div className="flex items-center gap-2">
               <span>背景色：</span>

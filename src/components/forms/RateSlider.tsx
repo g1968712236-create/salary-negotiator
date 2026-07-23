@@ -5,9 +5,11 @@ export interface RateSliderProps {
   value: number
   onChange: (value: number) => void
   label: string
+  /** T3：滑块一次拖动/步进结束时触发（ANALYTICS.md §5-T3） */
+  onCommit?: (value: number) => void
 }
 
-export function RateSlider({ value, onChange, label }: RateSliderProps) {
+export function RateSlider({ value, onChange, label, onCommit }: RateSliderProps) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
@@ -17,6 +19,7 @@ export function RateSlider({ value, onChange, label }: RateSliderProps) {
       <Slider
         value={[value]}
         onValueChange={(v) => onChange(v[0])}
+        onValueCommit={(v) => onCommit?.(v[0])}
         min={MIN_RATE}
         max={MAX_RATE}
         step={1}

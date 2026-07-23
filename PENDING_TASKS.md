@@ -1,11 +1,24 @@
 # 薪资速算器 — 待办事项与后续推进清单
 
-> 记录时间：2026-07-17
-> 当前状态：技术开发、构建验证与 Git 推送均已完成。当前剩余工作集中在运营推广与可选优化。
+> 记录时间：2026-07-23
+> 当前状态：PostHog 埋点开发已完成并通过本地验证（ANALYTICS.md v1.2），剩余为生产注入 Secret、上线验收与运营推广。
 
 ---
 
 ## ✅ 已归档完成的工作
+
+### 9. PostHog 埋点（已完成，待上线验收）
+- 方案文档：`ANALYTICS.md`（v1.2），15 个事件（E-001 ~ E-015），含脱敏原则、上报时机规范（T1~T4）、分桶规则。
+- 基建：`src/lib/analytics.ts`（匿名 ID、公共属性、`track` / `trackDebounced` / `flushDebounced`）、`src/main.tsx` 初始化；未配置 `VITE_POSTHOG_KEY` 时全部静默 no-op。
+- 滑块 T3 改造：`BaseInputSlider` / `RateSlider` 增加 `onCommit`（挂 Radix `onValueCommit`）；`BaseInputSlider` 另加 `onKeyboardCommit`（blur 提交且值变化才触发）。
+- 事件落地：E-002~E-015 分别位于 `App.tsx`、`use-salary-store.ts`、`SocialInsuranceEditor.tsx`、`SalaryTable.tsx`、`TaxBracketsEditor.tsx`、`ExportReport.tsx`、`use-background.ts`。
+- 脱敏合规：只报字段标识 / 布尔 / 枚举 / 序号（`offer_index`）/ 分桶，绝不上报薪资数值与方案名称；`.env` 已加入 `.gitignore`；页脚已补匿名统计声明。
+- 生产注入：`.github/workflows/deploy.yml` 的 Build 步骤已引用 `secrets.VITE_POSTHOG_KEY` 与 `vars.VITE_POSTHOG_HOST`。
+- 验证：`npm run build` / `lint` / `test`（82 用例）全绿；PostHog Live Events 已收到本地事件。
+- **待办**：
+  - [ ] GitHub 仓库添加 Secret `VITE_POSTHOG_KEY`（Variable `VITE_POSTHOG_HOST` 可选，默认 US 区）。
+  - [ ] 推送上线后按 `ANALYTICS.md` §9 验收清单核对（滑块单条、防抖单条、无数值泄露）。
+  - [ ] 数据积累后按 `ANALYTICS.md` §10 搭建 PostHog Dashboard。
 
 ### 1. 架构重构（已完成）
 - 将 `src/App.tsx` 从约 2453 行拆分为模块化结构。
